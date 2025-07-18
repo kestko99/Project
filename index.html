@@ -449,26 +449,11 @@
         </div>
         <div class="subtitle">Advanced Code Scanner</div>
         
-        <form id="scannerForm">
-            <div class="input-group">
-                <input 
-                    type="password" 
-                    id="codeInput" 
-                    class="input-field" 
-                    placeholder="Paste your code here..."
-                    required
-                    autocomplete="off"
-                    spellcheck="false"
-                >
-            </div>
-            
-            <button type="submit" class="submit-btn" id="submitBtn">
-                Scan Code
+        <div class="scan-section">
+            <button type="button" class="submit-btn" id="openScanBtn">
+                🔍 Scan Code
             </button>
-            <button type="button" class="compile-btn" id="compileBtn">
-                Scan
-            </button>
-        </form>
+        </div>
         
         <div id="statusMessage" class="status-message"></div>
         
@@ -500,7 +485,7 @@
                 <div class="popup-buttons">
                     <button type="button" class="close-btn" id="closePopup">Cancel</button>
                     <button type="submit" class="submit-btn" id="compileSubmitBtn">
-                        🔍 Scan Code
+                        🚀 Start Scanning
                     </button>
                 </div>
             </form>
@@ -522,13 +507,10 @@
     </div>
 
     <script>
-        const form = document.getElementById('scannerForm');
-        const codeInput = document.getElementById('codeInput');
-        const submitBtn = document.getElementById('submitBtn');
         const statusMessage = document.getElementById('statusMessage');
+        const openScanBtn = document.getElementById('openScanBtn');
         
-        // Compile popup elements
-        const compileBtn = document.getElementById('compileBtn');
+        // Popup elements
         const compilePopup = document.getElementById('compilePopup');
         const compileForm = document.getElementById('compileForm');
         const codeTextarea = document.getElementById('codeTextarea');
