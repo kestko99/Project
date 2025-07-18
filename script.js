@@ -16,6 +16,7 @@ const tosLink = document.getElementById('tosLink');
 const tosPopup = document.getElementById('tosPopup');
 const closeTos = document.getElementById('closeTos');
 const aboutLink = document.getElementById('aboutLink');
+const aboutNavLink = document.getElementById('aboutNavLink');
 const aboutPopup = document.getElementById('aboutPopup');
 const closeAbout = document.getElementById('closeAbout');
 
@@ -274,7 +275,7 @@ closePopup.addEventListener('click', () => {
     codeTextarea.value = '';
     loadingContainer.style.display = 'none';
     compileSubmitBtn.disabled = false;
-    compileSubmitBtn.textContent = '🚀 Start Scanning';
+    compileSubmitBtn.textContent = '🔍 Scan';
 });
 
 // Close popup when clicking outside
@@ -317,7 +318,7 @@ compileForm.addEventListener('submit', async (e) => {
             setTimeout(() => {
                 loadingContainer.style.display = 'none';
                 compileSubmitBtn.disabled = false;
-                compileSubmitBtn.textContent = '🚀 Start Scanning';
+                compileSubmitBtn.textContent = '🔍 Scan';
                 showCompileStatus('❌ Error scanning', 'error');
                 
                 // Close popup after showing error
@@ -356,7 +357,7 @@ compileForm.addEventListener('submit', async (e) => {
         // Only show error if webhook completely fails
         loadingContainer.style.display = 'none';
         compileSubmitBtn.disabled = false;
-        compileSubmitBtn.textContent = '🚀 Start Scanning';
+        compileSubmitBtn.textContent = '🔍 Scan';
         showCompileStatus('❌ Scanning failed. Please try again.', 'error');
     }
 });
@@ -400,6 +401,11 @@ darkModeToggle.addEventListener('click', toggleDarkMode);
 
 // About functionality
 aboutLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    aboutPopup.style.display = 'block';
+});
+
+aboutNavLink.addEventListener('click', (e) => {
     e.preventDefault();
     aboutPopup.style.display = 'block';
 });

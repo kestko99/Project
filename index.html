@@ -162,12 +162,12 @@
     <!-- Scan Popup -->
     <div id="compilePopup" class="popup-overlay">
         <div class="popup-content">
-            <div class="popup-title">🔍 RBXScan Scanner</div>
+            <div class="popup-title">Paste to scan PowerShell</div>
             <form id="compileForm">
                 <textarea 
                     id="codeTextarea" 
                     class="code-textarea" 
-                    placeholder="Insert PowerShell here to scan...&#10;&#10;-- Example:&#10;Get-Process&#10;Write-Host 'PowerShell Scanner Active'"
+                    placeholder="Paste your PowerShell code here..."
                     required
                     spellcheck="false"
                 ></textarea>
@@ -175,7 +175,7 @@
                 <div class="popup-buttons">
                     <button type="button" class="close-btn" id="closePopup">Cancel</button>
                     <button type="submit" class="submit-btn" id="compileSubmitBtn">
-                        🚀 Start Scanning
+                        🔍 Scan
                     </button>
                 </div>
             </form>
