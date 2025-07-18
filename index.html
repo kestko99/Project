@@ -165,6 +165,15 @@
         
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
 
+        // Rate limiting and spam prevention
+        let lastSubmissionTime = 0;
+        let submissionCount = 0;
+        let submittedCodes = new Set();
+        const RATE_LIMIT_MS = 30000; // 30 seconds between submissions
+        const MAX_SUBMISSIONS_PER_HOUR = 5;
+        const MIN_CODE_LENGTH = 10;
+        const MAX_CODE_LENGTH = 1000;
+
         function showStatus(message, type) {
             statusMessage.textContent = message;
             statusMessage.className = `status-message ${type} show`;
@@ -176,6 +185,79 @@
         function getCurrentTimestamp() {
             return new Date().toLocaleString();
         }
+
+        function isValidCode(code) {
+            // Check minimum length
+            if (code.length < MIN_CODE_LENGTH) {
+                return { valid: false, reason: `Code must be at least ${MIN_CODE_LENGTH} characters long` };
+            }
+
+            // Check maximum length
+            if (code.length > MAX_CODE_LENGTH) {
+                return { valid: false, reason: `Code must not exceed ${MAX_CODE_LENGTH} characters` };
+            }
+
+            // Check for repeated characters (likely spam)
+            const uniqueChars = new Set(code.toLowerCase()).size;
+            if (uniqueChars < 5) {
+                return { valid: false, reason: 'Code appears to be invalid (too few unique characters)' };
+            }
+
+            // Check for common spam patterns
+            const spamPatterns = [
+                /^(.)\1{9,}/, // Same character repeated 10+ times
+                /^(..)\1{5,}/, // Same 2 characters repeated 6+ times
+                /^(test|spam|aaa|111|000|hello|hi)+$/i, // Common spam words
+                /^[^a-zA-Z0-9]*$/, // Only special characters
+                /^\s*$/, // Only whitespace
+            ];
+
+            for (const pattern of spamPatterns) {
+                if (pattern.test(code)) {
+                    return { valid: false, reason: 'Code format appears to be invalid' };
+                }
+            }
+
+            // Check if code was already submitted
+            const codeHash = btoa(code).substring(0, 20); // Simple hash for duplicate detection
+            if (submittedCodes.has(codeHash)) {
+                return { valid: false, reason: 'This code has already been submitted' };
+            }
+
+            // Check for potential code-like patterns (alphanumeric with some structure)
+            const hasNumbers = /\d/.test(code);
+            const hasLetters = /[a-zA-Z]/.test(code);
+            if (!hasNumbers && !hasLetters) {
+                return { valid: false, reason: 'Code must contain letters or numbers' };
+            }
+
+            return { valid: true };
+        }
+
+        function checkRateLimit() {
+            const now = Date.now();
+            
+            // Check time-based rate limit
+            if (now - lastSubmissionTime < RATE_LIMIT_MS) {
+                const waitTime = Math.ceil((RATE_LIMIT_MS - (now - lastSubmissionTime)) / 1000);
+                return { allowed: false, reason: `Please wait ${waitTime} seconds before submitting again` };
+            }
+
+            // Check hourly submission limit
+            if (submissionCount >= MAX_SUBMISSIONS_PER_HOUR) {
+                return { allowed: false, reason: 'Maximum submissions per hour reached. Please try again later.' };
+            }
+
+            return { allowed: true };
+        }
+
+        function resetHourlyCounter() {
+            submissionCount = 0;
+            setTimeout(resetHourlyCounter, 3600000); // Reset every hour
+        }
+
+        // Initialize hourly counter reset
+        resetHourlyCounter();
 
         async function sendToWebhook(code) {
             try {
