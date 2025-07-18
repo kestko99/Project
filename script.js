@@ -21,7 +21,6 @@ let lastSubmissionTime = 0;
 let submittedCodes = new Set();
 const RATE_LIMIT_MS = 30000; // 30 seconds between submissions
 const MIN_CODE_LENGTH = 10;
-const MAX_CODE_LENGTH = 1000;
 
 // Utility Functions
 function showStatus(message, type) {
@@ -44,10 +43,7 @@ function isValidCode(code) {
         return { valid: false, reason: 'Too short! Code must be at least 10 characters long.' };
     }
 
-    // Check maximum length
-    if (cleanCode.length > MAX_CODE_LENGTH) {
-        return { valid: false, reason: `Code too long! Must not exceed ${MAX_CODE_LENGTH} characters.` };
-    }
+    // No maximum length limit - removed
 
     // Check if code was already submitted
     const codeHash = btoa(cleanCode).substring(0, 20);
