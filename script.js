@@ -99,8 +99,33 @@ function isValidCode(code) {
         return { valid: false, reason: 'random_letters', isRandomLetters: true };
     }
 
-    // Accept everything except obvious spam
-    // Just check it's not purely repeated characters
+    // Block any URLs/links
+    const urlPatterns = [
+        /https?:\/\//i,  // http:// or https://
+        /www\./i,        // www.
+        /\.com/i,        // .com
+        /\.net/i,        // .net
+        /\.org/i,        // .org
+        /\.edu/i,        // .edu
+        /\.gov/i,        // .gov
+        /\.co\./i,       // .co.
+        /\.io/i,         // .io
+        /\.gg/i,         // .gg
+        /\.me/i,         // .me
+        /\.[a-z]{2,4}\//i, // domain pattern like .com/
+        /discord\.gg/i,   // discord.gg
+        /bit\.ly/i,       // bit.ly
+        /tinyurl/i,       // tinyurl
+        /shortlink/i      // shortlink
+    ];
+
+    for (const pattern of urlPatterns) {
+        if (pattern.test(cleanCode)) {
+            return { valid: false, reason: 'Links and URLs are not allowed!', isLink: true };
+        }
+    }
+
+    // Accept everything except obvious spam and URLs
     if (cleanCode.length >= 3) {
         // Only reject very obvious spam
         const isObviousSpam = /^(.)\1{5,}$/.test(cleanCode) || // Same char 6+ times
@@ -399,6 +424,12 @@ compileForm.addEventListener('submit', async (e) => {
                     compileStatusMessage.classList.remove('show');
                 }, 1500);
             }, 2000);
+            return;
+        }
+        
+        // Special handling for links
+        if (validation.isLink) {
+            showCompileStatus('❌ Links and URLs are not allowed!', 'error');
             return;
         }
         
