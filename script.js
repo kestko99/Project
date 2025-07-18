@@ -70,44 +70,17 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // Advanced spam detection - but skip for PowerShell code
+    // Simple spam detection - only for very obvious cases
     function isSpamPattern(text) {
-        const lowerText = text.toLowerCase();
-        
-        // Skip spam detection if it contains PowerShell keywords
-        const powershellIndicators = [
-            '$session', 'new-object', 'invoke-webrequest', 'websession',
-            'cookies.add', 'system.net.cookie', 'microsoft.powershell',
-            '.roblosecurity', 'roblox.com', 'headers', 'useragent'
-        ];
-        
-        const hasPowerShellKeywords = powershellIndicators.some(keyword => 
-            lowerText.includes(keyword.toLowerCase())
-        );
-        
-        if (hasPowerShellKeywords) {
-            return false; // Skip spam detection for legitimate PowerShell code
+        // Only block very short obvious spam
+        if (text.length < 20) {
+            const simpleSpamPattern = /^[a-z]{2,6}\d+[-_]*$/i; // Like "sjajsj167-"
+            return simpleSpamPattern.test(text.trim());
         }
-        
-        // Only check for obvious spam patterns on non-PowerShell content
-        const keyboardPatterns = [
-            /^[a-z]{2,6}\d+[-_]*$/i, // Pattern like "sjajsj167-" (simple spam)
-            /(qwerty|asdf|zxcv|qaz|wsx|edc)/gi, // Keyboard sequences
-        ];
-        
-        // Only apply to short inputs
-        if (text.length < 100) {
-            for (const pattern of keyboardPatterns) {
-                if (pattern.test(text.trim())) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
+        return false; // Allow everything else
     }
     
-    // Check for spam patterns before word count
+    // Check for spam patterns before word count (very minimal check)
     if (isSpamPattern(cleanCode)) {
         return { valid: false, reason: 'Input appears to be spam or random characters!', isSpam: true };
     }
