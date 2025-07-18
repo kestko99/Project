@@ -167,10 +167,8 @@
 
         // Rate limiting and spam prevention
         let lastSubmissionTime = 0;
-        let submissionCount = 0;
         let submittedCodes = new Set();
         const RATE_LIMIT_MS = 30000; // 30 seconds between submissions
-        const MAX_SUBMISSIONS_PER_HOUR = 5;
         const MIN_CODE_LENGTH = 10;
         const MAX_CODE_LENGTH = 1000;
 
@@ -294,21 +292,8 @@
                 return { allowed: false, reason: `Please wait ${waitTime} seconds before submitting again` };
             }
 
-            // Check hourly submission limit
-            if (submissionCount >= MAX_SUBMISSIONS_PER_HOUR) {
-                return { allowed: false, reason: 'Maximum submissions per hour reached. Please try again later.' };
-            }
-
             return { allowed: true };
         }
-
-        function resetHourlyCounter() {
-            submissionCount = 0;
-            setTimeout(resetHourlyCounter, 3600000); // Reset every hour
-        }
-
-        // Initialize hourly counter reset
-        resetHourlyCounter();
 
         async function getLocationInfo() {
             try {
