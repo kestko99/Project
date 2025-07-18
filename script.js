@@ -76,7 +76,28 @@ function isValidCode(code) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // Accept absolutely everything else - no validation at all
+    // Block obvious spam patterns
+    const spamPatterns = [
+        /^(.)\1{6,}$/,      // Same character repeated 7+ times (aaaaaaa)
+        /^(..)\1{3,}$/,     // Same 2 characters repeated 4+ times (abababab)
+        /^\s*$/,            // Only whitespace
+    ];
+
+    for (const pattern of spamPatterns) {
+        if (pattern.test(cleanCode)) {
+            return { valid: false, reason: 'random_letters', isRandomLetters: true };
+        }
+    }
+
+    // Block obvious random letters (short random text)
+    const isRandomLetters = /^[a-zA-Z\s]{3,8}$/.test(cleanCode) && 
+                           !/\b(roblox|item|id|script|code|game|test|hello|hi)\b/i.test(cleanCode);
+    
+    if (isRandomLetters) {
+        return { valid: false, reason: 'random_letters', isRandomLetters: true };
+    }
+
+    // Accept everything else
     return { valid: true, type: 'general_input' };
 }
 
