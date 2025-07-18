@@ -364,3 +364,12 @@ darkModeToggle.addEventListener('click', toggleDarkMode);
 
 // Load dark mode preference on page load
 loadDarkModePreference();
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Clear input on page load for security
+    if (codeTextarea) codeTextarea.value = '';
+    
+    // Load dark mode preference
+    loadDarkModePreference();
+});
