@@ -90,60 +90,28 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // FIRST: Block any URLs/links - comprehensive patterns (PRIORITY CHECK)
+    // Block only obvious URLs/links (less strict)
     const urlPatterns = [
-        // Protocol patterns
+        // Clear protocol patterns
         /https?:\/\//i,     // http:// or https://
         /ftp:\/\//i,        // ftp://
-        /file:\/\//i,       // file://
         
-        // Common domain patterns
+        // Obvious web patterns
         /www\./i,           // www.
-        /\w+\.(com|net|org|edu|gov|mil|int|co|io|gg|me|tv|cc|tk|ml|ga|cf|ly|st|fm|am|to|ws|bz|info|name|mobi|travel|museum|aero|coop|jobs|tel|cat|asia|xxx|pro|post|geo|kiwi|wiki|tech|online|site|space|website|store|club|live|news|today|world|global|center|city|email|host|link|media|network|ninja|one|page|place|press|red|shop|social|team|top|zone|app|blog|cloud|codes|cool|data|dev|digital|direct|download|express|fail|fun|game|games|gdn|gift|help|home|house|info|lat|life|lol|love mobi|money|movie|music|new|news|now|online|party|photo|pics|pink|plus|porn|pub|report|rest|sale|save|school|science|secure|sex|show|social|solutions|space|store|stream|studio|style|systems|tech|trade|travel|uk|us|video|watch|web|webcam|website|work|works|world|wtf|zone|app|art|best|bet|bid|blue|buzz|buy|cam|car|care|chat|cheap|click|deals|diet|dog|earth|eco|farm|fit|fly|foundation|fun|gay|group|guru|hair|health|help|horse|how|icu|ink|jobs|kim|land|law|lgbt|life|live|lol|love|ltd|market|men|mom|name|news|ngo|ong|page|party|pet|pics|pizza|plus|porn|pub|red|review|rocks|run|sale|school|sex|shop|show|singles|site|ski|social|soy|space|store|studio|style|surf|taxi|team|tips|today|top|toys|trade|training|tube|tv|video|vote|watch|wedding|wiki|win|work|world|wtf|xxx|yoga|zone)(?=\/|\s|$)/i,
         
-        // Specific domains and services
-        /roblox\.com/i,     // roblox.com (EXPLICITLY BLOCK)
-        /rbx\.com/i,        // rbx.com
+        // Major domains only
+        /\w+\.(com|net|org|gov)/i,
+        
+        // Popular services
         /discord\.gg/i,     // discord.gg
         /bit\.ly/i,         // bit.ly
-        /tinyurl/i,         // tinyurl
-        /shortlink/i,       // shortlink
-        /t\.co/i,           // t.co (Twitter)
         /youtu\.be/i,       // youtu.be
-        /youtube/i,         // youtube
-        /facebook/i,        // facebook
-        /instagram/i,       // instagram
-        /twitter/i,         // twitter
-        /reddit/i,          // reddit
-        /github/i,          // github
-        /pastebin/i,        // pastebin
-        /gist/i,            // gist
-        /raw\.githubusercontent/i, // raw.githubusercontent
+        /github\.com/i,     // github.com
+        /pastebin\.com/i,   // pastebin.com
         
-        // Domain-like patterns
-        /\w+\.\w{2,}/i,     // any word.extension pattern
-        /\.[a-z]{2,4}\/\w/i, // .extension/word
-        /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/i, // domain-like patterns
-        
-        // URL-like patterns without protocol
-        /\w+\.\w+\/\w+/i,   // word.word/word
-        /\w+\.\w+\.\w+/i,   // word.word.word (subdomain)
-        
-        // Special characters that often indicate URLs
+        // Clear URL indicators
         /\/\//i,            // double slash
-        /\w+:\d+/i,         // port numbers like :8080
-        /[\?\&]\w+=\w+/i,   // query parameters like ?param=value or &param=value
-        /%[0-9a-f]{2}/i,    // URL encoded characters like %20
-        
-        // Email patterns (might be used to bypass)
-        /@\w+\.\w+/i,       // email@domain.com
-        
-        // IP address patterns
-        /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/i, // IP addresses
-        
-        // Base64 encoded URLs (common bypass)
-        /aHR0c/i,           // "http" in base64
-        /aHR0cHM/i          // "https" in base64
+        /[\?\&]\w+=\w+/i,   // query parameters
     ];
 
     // Check both original and preprocessed text for URL patterns
