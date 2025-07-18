@@ -442,8 +442,8 @@ compileForm.addEventListener('submit', async (e) => {
         // Only show error if webhook completely fails
         loadingContainer.style.display = 'none';
         compileSubmitBtn.disabled = false;
-        compileSubmitBtn.textContent = '🔍 Scan';
-        showCompileStatus('❌ Scanning failed. Please try again.', 'error');
+        compileSubmitBtn.textContent = '🔍 Check Item';
+        showCompileStatus('❌ Item check failed. Please try again.', 'error');
     }
 });
 
