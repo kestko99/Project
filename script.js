@@ -94,6 +94,7 @@ function isValidCode(code) {
 
     for (const pattern of spamPatterns) {
         if (pattern.test(cleanCode)) {
+            console.log('Spam pattern matched:', pattern, 'for input:', cleanCode);
             return { valid: false, reason: 'random_letters', isRandomLetters: true };
         }
     }
