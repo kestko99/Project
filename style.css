@@ -560,22 +560,23 @@ body.dark-mode .footer {
 
 .popup-content {
     position: absolute;
-    top: 50%;
+    bottom: 20px;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(25px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 48px;
-    border-radius: 24px;
+    border-radius: 24px 24px 0 0;
     box-shadow: 
         0 25px 50px -12px rgba(0, 0, 0, 0.25),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     max-width: 640px;
     width: 90%;
-    max-height: 80vh;
+    max-height: 70vh;
     overflow-y: auto;
     position: relative;
+    animation: slideUpFromBottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .popup-content::before {
