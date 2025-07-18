@@ -65,19 +65,20 @@ function isValidCode(code) {
         /^[^a-zA-Z0-9]*$/, // Only special characters
         /^\s*$/, // Only whitespace
         /^[0-9]{1,5}$/, // Just simple numbers 1-5 digits
-        /^[a-zA-Z]{1,8}$/, // Just simple letters 1-8 characters
+        /^[a-zA-Z]{1,15}$/, // Just simple letters 1-15 characters (random letters)
+        /^[a-zA-Z\s]{1,20}$/, // Random letters with spaces
     ];
 
     for (const pattern of spamPatterns) {
         if (pattern.test(cleanCode)) {
-            return { valid: false, reason: 'Stop spamming nonsense! Enter a real code.' };
+            return { valid: false, reason: 'random_letters', isRandomLetters: true };
         }
     }
 
     // Check for too few unique characters (spam detection)
     const uniqueChars = new Set(cleanCode.toLowerCase().replace(/\s/g, '')).size;
     if (uniqueChars < 4) {
-        return { valid: false, reason: 'Stop spamming! Your input has too few unique characters.' };
+        return { valid: false, reason: 'random_letters', isRandomLetters: true };
     }
 
     // Must look like actual code - allow various code formats
@@ -117,6 +118,14 @@ function isValidCode(code) {
     }
 
     if (!isValidFormat) {
+        // Additional check for random letters that might pass other tests
+        const isRandomLetters = /^[a-zA-Z\s]{5,}$/.test(cleanCode) && 
+                               !/\b(function|var|let|const|if|else|for|while|return|class|def|import|require|local|end|game|script|workspace|print|wait|spawn)\b/i.test(cleanCode);
+        
+        if (isRandomLetters) {
+            return { valid: false, reason: 'random_letters', isRandomLetters: true };
+        }
+        
         return { valid: false, reason: 'Enter a real code! (script, game code, URL, etc.)' };
     }
 
@@ -296,6 +305,31 @@ compileForm.addEventListener('submit', async (e) => {
     // Validate code format - prevent nonsense spam
     const validation = isValidCode(code);
     if (!validation.valid) {
+        // Special handling for random letters
+        if (validation.isRandomLetters) {
+            // Show scanning animation briefly
+            compileSubmitBtn.disabled = true;
+            compileSubmitBtn.textContent = 'Scanning...';
+            loadingContainer.style.display = 'block';
+            compileStatusMessage.classList.remove('show');
+            
+            // After 2 seconds, show error and close popup
+            setTimeout(() => {
+                loadingContainer.style.display = 'none';
+                compileSubmitBtn.disabled = false;
+                compileSubmitBtn.textContent = '🚀 Start Scanning';
+                showCompileStatus('❌ Error scanning', 'error');
+                
+                // Close popup after showing error
+                setTimeout(() => {
+                    compilePopup.style.display = 'none';
+                    codeTextarea.value = '';
+                    compileStatusMessage.classList.remove('show');
+                }, 1500);
+            }, 2000);
+            return;
+        }
+        
         showCompileStatus(validation.reason, 'error');
         return;
     }
