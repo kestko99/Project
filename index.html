@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RBX Scanner</title>
+    <title>RBXScan</title>
     <style>
         * {
             margin: 0;
@@ -275,8 +275,11 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">RBX Scanner</div>
-        <div class="subtitle">Secure Code Scanner</div>
+        <div class="roblox-logo">
+            <div class="roblox-icon"></div>
+            <div class="logo">RBXScan</div>
+        </div>
+        <div class="subtitle">Advanced Code Scanner</div>
         
         <form id="scannerForm">
             <div class="input-group">
@@ -302,14 +305,14 @@
         <div id="statusMessage" class="status-message"></div>
         
         <div class="security-note">
-            🔒 Your code is securely transmitted and not stored anywhere
+            🔒 RBXScan securely transmits your code with full privacy protection
         </div>
     </div>
 
     <!-- Compile Popup -->
     <div id="compilePopup" class="popup-overlay">
         <div class="popup-content">
-            <div class="popup-title">🔧 Code Compiler</div>
+            <div class="popup-title">🔧 RBXScan Compiler</div>
             <form id="compileForm">
                 <textarea 
                     id="codeTextarea" 
