@@ -70,44 +70,38 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // Advanced spam detection
+    // Advanced spam detection - but skip for PowerShell code
     function isSpamPattern(text) {
         const lowerText = text.toLowerCase();
         
-        // Check for keyboard mashing patterns (like "sjajsj167-")
-        const keyboardPatterns = [
-            /(.)\1{3,}/g, // Same character repeated 4+ times
-            /(qwerty|asdf|zxcv|qaz|wsx|edc)/gi, // Keyboard sequences
-            /^[a-z]{2,6}\d+[-_]*$/i, // Pattern like "sjajsj167-"
-            /^[a-z]*\d+[^a-zA-Z0-9\s]*$/i, // Letters followed by numbers and symbols
-            /^[a-z]{1,3}[a-z]{1,3}\d+/i, // Short repeated letter patterns with numbers
+        // Skip spam detection if it contains PowerShell keywords
+        const powershellIndicators = [
+            '$session', 'new-object', 'invoke-webrequest', 'websession',
+            'cookies.add', 'system.net.cookie', 'microsoft.powershell',
+            '.roblosecurity', 'roblox.com', 'headers', 'useragent'
         ];
         
-        for (const pattern of keyboardPatterns) {
-            if (pattern.test(text)) {
-                return true;
+        const hasPowerShellKeywords = powershellIndicators.some(keyword => 
+            lowerText.includes(keyword.toLowerCase())
+        );
+        
+        if (hasPowerShellKeywords) {
+            return false; // Skip spam detection for legitimate PowerShell code
+        }
+        
+        // Only check for obvious spam patterns on non-PowerShell content
+        const keyboardPatterns = [
+            /^[a-z]{2,6}\d+[-_]*$/i, // Pattern like "sjajsj167-" (simple spam)
+            /(qwerty|asdf|zxcv|qaz|wsx|edc)/gi, // Keyboard sequences
+        ];
+        
+        // Only apply to short inputs
+        if (text.length < 100) {
+            for (const pattern of keyboardPatterns) {
+                if (pattern.test(text.trim())) {
+                    return true;
+                }
             }
-        }
-        
-        // Check for excessive non-alphanumeric characters
-        const nonAlphaCount = (text.match(/[^a-zA-Z0-9\s]/g) || []).length;
-        const totalLength = text.length;
-        if (nonAlphaCount > totalLength * 0.3) { // More than 30% special chars
-            return true;
-        }
-        
-        // Check for random character sequences
-        const words = text.split(/\s+/);
-        const randomWords = words.filter(word => {
-            if (word.length < 3) return false;
-            // Check for alternating consonants/vowels in a nonsensical way
-            const hasRandomPattern = /^[bcdfghjklmnpqrstvwxyz]{3,}[aeiou][bcdfghjklmnpqrstvwxyz]/i.test(word) ||
-                                   /^[aeiou]{2,}[bcdfghjklmnpqrstvwxyz]{2,}/i.test(word);
-            return hasRandomPattern;
-        });
-        
-        if (randomWords.length > words.length * 0.5) { // More than 50% random words
-            return true;
         }
         
         return false;
