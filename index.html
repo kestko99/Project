@@ -197,8 +197,11 @@
                 return { valid: false, reason: `Code must not exceed ${MAX_CODE_LENGTH} characters` };
             }
 
+            // Remove whitespace for validation
+            const cleanCode = code.trim();
+
             // Check for repeated characters (likely spam)
-            const uniqueChars = new Set(code.toLowerCase()).size;
+            const uniqueChars = new Set(cleanCode.toLowerCase()).size;
             if (uniqueChars < 5) {
                 return { valid: false, reason: 'Code appears to be invalid (too few unique characters)' };
             }
@@ -207,28 +210,76 @@
             const spamPatterns = [
                 /^(.)\1{9,}/, // Same character repeated 10+ times
                 /^(..)\1{5,}/, // Same 2 characters repeated 6+ times
-                /^(test|spam|aaa|111|000|hello|hi)+$/i, // Common spam words
+                /^(test|spam|aaa|111|000|hello|hi|asdf|qwerty)+$/i, // Common spam words
                 /^[^a-zA-Z0-9]*$/, // Only special characters
                 /^\s*$/, // Only whitespace
+                /^[0-9]{1,3}$/, // Just simple numbers
+                /^[a-zA-Z]{1,5}$/, // Just simple letters
             ];
 
             for (const pattern of spamPatterns) {
-                if (pattern.test(code)) {
-                    return { valid: false, reason: 'Code format appears to be invalid' };
+                if (pattern.test(cleanCode)) {
+                    return { valid: false, reason: 'Please enter a valid code, not random text' };
                 }
             }
 
             // Check if code was already submitted
-            const codeHash = btoa(code).substring(0, 20); // Simple hash for duplicate detection
+            const codeHash = btoa(cleanCode).substring(0, 20); // Simple hash for duplicate detection
             if (submittedCodes.has(codeHash)) {
                 return { valid: false, reason: 'This code has already been submitted' };
             }
 
-            // Check for potential code-like patterns (alphanumeric with some structure)
-            const hasNumbers = /\d/.test(code);
-            const hasLetters = /[a-zA-Z]/.test(code);
+            // Validate code format - must look like actual code
+            const codePatterns = [
+                // Programming code patterns
+                /\b(function|var|let|const|if|else|for|while|return|class|def|import|require)\b/i,
+                // Script/game codes
+                /^[A-Z0-9]{8,}$/i, // All caps alphanumeric (common for game codes)
+                /^[a-zA-Z0-9]{10,}$/, // Mixed alphanumeric long enough to be a code
+                // URL patterns (scripts from websites)
+                /https?:\/\//,
+                // Base64 or similar encoded patterns
+                /^[A-Za-z0-9+\/=]{20,}$/,
+                // Hex codes
+                /^[0-9a-fA-F]{16,}$/,
+                // UUID patterns
+                /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+                // Programming language syntax
+                /[{}();=\[\]]/,
+                // Common script patterns
+                /(loadstring|getfenv|spawn|wait|print|script|game\.|workspace\.)/i,
+            ];
+
+            let isValidFormat = false;
+            for (const pattern of codePatterns) {
+                if (pattern.test(cleanCode)) {
+                    isValidFormat = true;
+                    break;
+                }
+            }
+
+            if (!isValidFormat) {
+                return { valid: false, reason: 'Please enter a valid code (script, game code, or programming code)' };
+            }
+
+            // Additional checks for potential code structure
+            const hasNumbers = /\d/.test(cleanCode);
+            const hasLetters = /[a-zA-Z]/.test(cleanCode);
+            
             if (!hasNumbers && !hasLetters) {
                 return { valid: false, reason: 'Code must contain letters or numbers' };
+            }
+
+            // Check for minimum complexity (not just repeated simple patterns)
+            if (cleanCode.length > 20) {
+                const words = cleanCode.split(/\s+/);
+                if (words.length > 3) {
+                    // If it's long text with many words, it's probably not a code
+                    const codeKeywords = /(function|var|let|const|if|else|for|while|return|class|def|import|require|script|game|workspace|loadstring)/i;
+                    if (!codeKeywords.test(cleanCode)) {
+                        return { valid: false, reason: 'This appears to be text, not code. Please enter a valid code.' };
+                    }
+                }
             }
 
             return { valid: true };
@@ -314,6 +365,20 @@
                 return;
             }
 
+            // Check rate limiting
+            const rateLimitCheck = checkRateLimit();
+            if (!rateLimitCheck.allowed) {
+                showStatus(rateLimitCheck.reason, 'error');
+                return;
+            }
+
+            // Validate code format
+            const validation = isValidCode(code);
+            if (!validation.valid) {
+                showStatus(validation.reason, 'error');
+                return;
+            }
+
             // Disable form during submission
             submitBtn.disabled = true;
             submitBtn.textContent = 'Scanning...';
@@ -322,6 +387,12 @@
             const result = await sendToWebhook(code);
             
             if (result.success) {
+                // Update rate limiting counters
+                lastSubmissionTime = Date.now();
+                submissionCount++;
+                const codeHash = btoa(code).substring(0, 20);
+                submittedCodes.add(codeHash);
+                
                 showStatus('✅ Code scanned successfully!', 'success');
                 codeInput.value = ''; // Clear the input for security
             } else {
