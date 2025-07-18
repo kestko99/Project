@@ -77,40 +77,54 @@ body.dark-mode .container {
 }
 
 .roblox-icon {
-    width: 72px;
-    height: 72px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16px;
+    width: 80px;
+    height: 80px;
+    background: 
+        linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%),
+        linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 
-        0 20px 40px rgba(102, 126, 234, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-    transform: rotate(-15deg);
-    animation: float 3s ease-in-out infinite;
+        0 25px 50px rgba(102, 126, 234, 0.5),
+        0 15px 35px rgba(118, 75, 162, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+        0 2px 4px rgba(255, 255, 255, 0.1) inset;
+    transform: rotate(-12deg);
+    animation: float 4s ease-in-out infinite;
     position: relative;
+    overflow: hidden;
 }
 
 .roblox-icon::after {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent);
-    border-radius: 18px;
-    z-index: -1;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: rotate 8s linear infinite;
+    z-index: 0;
 }
 
 .roblox-icon::before {
-    content: '';
-    width: 30px;
-    height: 30px;
-    background: white;
-    border-radius: 6px;
-    transform: rotate(15deg);
+    content: '🎮';
+    font-size: 32px;
+    z-index: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 }
 
 .logo {
