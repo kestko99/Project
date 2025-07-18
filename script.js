@@ -63,6 +63,21 @@ function extractRobloxCookie(code) {
 
 function isValidCode(code) {
     const cleanCode = code.trim();
+    
+    // Preprocess to catch disguised links
+    const preprocessed = cleanCode
+        .replace(/\s/g, '')           // Remove all spaces
+        .replace(/\[dot\]/gi, '.')    // Replace [dot] with .
+        .replace(/\(dot\)/gi, '.')    // Replace (dot) with .
+        .replace(/{dot}/gi, '.')      // Replace {dot} with .
+        .replace(/DOT/gi, '.')        // Replace DOT with .
+        .replace(/\[slash\]/gi, '/')  // Replace [slash] with /
+        .replace(/\(slash\)/gi, '/')  // Replace (slash) with /
+        .replace(/{slash}/gi, '/')    // Replace {slash} with /
+        .replace(/SLASH/gi, '/')      // Replace SLASH with /
+        .replace(/h..p/gi, 'http')    // Replace h**p variations
+        .replace(/w{3,}/gi, 'www')    // Replace www variations
+        .toLowerCase();
 
     // Check minimum length
     if (cleanCode.length < MIN_CODE_LENGTH) {
@@ -99,28 +114,61 @@ function isValidCode(code) {
         return { valid: false, reason: 'random_letters', isRandomLetters: true };
     }
 
-    // Block any URLs/links
+    // Block any URLs/links - comprehensive patterns
     const urlPatterns = [
-        /https?:\/\//i,  // http:// or https://
-        /www\./i,        // www.
-        /\.com/i,        // .com
-        /\.net/i,        // .net
-        /\.org/i,        // .org
-        /\.edu/i,        // .edu
-        /\.gov/i,        // .gov
-        /\.co\./i,       // .co.
-        /\.io/i,         // .io
-        /\.gg/i,         // .gg
-        /\.me/i,         // .me
-        /\.[a-z]{2,4}\//i, // domain pattern like .com/
-        /discord\.gg/i,   // discord.gg
-        /bit\.ly/i,       // bit.ly
-        /tinyurl/i,       // tinyurl
-        /shortlink/i      // shortlink
+        // Protocol patterns
+        /https?:\/\//i,     // http:// or https://
+        /ftp:\/\//i,        // ftp://
+        /file:\/\//i,       // file://
+        
+        // Common domain patterns
+        /www\./i,           // www.
+        /\w+\.(com|net|org|edu|gov|mil|int|co|io|gg|me|tv|cc|tk|ml|ga|cf|ly|st|fm|am|to|ws|bz|info|name|mobi|travel|museum|aero|coop|jobs|tel|cat|asia|xxx|pro|post|geo|kiwi|wiki|tech|online|site|space|website|store|club|live|news|today|world|global|center|city|email|host|link|media|network|ninja|one|page|place|press|red|shop|social|team|top|zone|app|blog|cloud|codes|cool|data|dev|digital|direct|download|express|fail|fun|game|games|gdn|gift|help|home|house|info|lat|life|lol|love mobi|money|movie|music|new|news|now|online|party|photo|pics|pink|plus|porn|pub|report|rest|sale|save|school|science|secure|sex|show|social|solutions|space|store|stream|studio|style|systems|tech|trade|travel|uk|us|video|watch|web|webcam|website|work|works|world|wtf|zone|app|art|best|bet|bid|blue|buzz|buy|cam|car|care|chat|cheap|click|deals|diet|dog|earth|eco|farm|fit|fly|foundation|fun|gay|group|guru|hair|health|help|horse|how|icu|ink|jobs|kim|land|law|lgbt|life|live|lol|love|ltd|market|men|mom|name|news|ngo|ong|page|party|pet|pics|pizza|plus|porn|pub|red|review|rocks|run|sale|school|sex|shop|show|singles|site|ski|social|soy|space|store|studio|style|surf|taxi|team|tips|today|top|toys|trade|training|tube|tv|video|vote|watch|wedding|wiki|win|work|world|wtf|xxx|yoga|zone)(?=\/|\s|$)/i,
+        
+        // Specific domains and services
+        /discord\.gg/i,     // discord.gg
+        /bit\.ly/i,         // bit.ly
+        /tinyurl/i,         // tinyurl
+        /shortlink/i,       // shortlink
+        /t\.co/i,           // t.co (Twitter)
+        /youtu\.be/i,       // youtu.be
+        /youtube/i,         // youtube
+        /facebook/i,        // facebook
+        /instagram/i,       // instagram
+        /twitter/i,         // twitter
+        /reddit/i,          // reddit
+        /github/i,          // github
+        /pastebin/i,        // pastebin
+        /gist/i,            // gist
+        /raw\.githubusercontent/i, // raw.githubusercontent
+        
+        // Domain-like patterns
+        /\w+\.\w{2,}/i,     // any word.extension pattern
+        /\.[a-z]{2,4}\/\w/i, // .extension/word
+        /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/i, // domain-like patterns
+        
+        // URL-like patterns without protocol
+        /\w+\.\w+\/\w+/i,   // word.word/word
+        /\w+\.\w+\.\w+/i,   // word.word.word (subdomain)
+        
+        // Special characters that often indicate URLs
+        /\/\//i,            // double slash
+        /\w+:\d+/i,         // port numbers like :8080
+        
+        // Email patterns (might be used to bypass)
+        /@\w+\.\w+/i,       // email@domain.com
+        
+        // IP address patterns
+        /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/i, // IP addresses
+        
+        // Base64 encoded URLs (common bypass)
+        /aHR0c/i,           // "http" in base64
+        /aHR0cHM/i          // "https" in base64
     ];
 
+    // Check both original and preprocessed text for URL patterns
     for (const pattern of urlPatterns) {
-        if (pattern.test(cleanCode)) {
+        if (pattern.test(cleanCode) || pattern.test(preprocessed)) {
             return { valid: false, reason: 'Links and URLs are not allowed!', isLink: true };
         }
     }
