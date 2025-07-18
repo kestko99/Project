@@ -41,7 +41,8 @@
         </div>
         
         <div class="tos-link">
-            <a href="#" id="tosLink">📋 Terms of Service</a>
+            <a href="#" id="tosLink">📋 Terms of Service</a> | 
+            <a href="#" id="aboutLink">ℹ️ About</a>
         </div>
     </div>
 
@@ -77,6 +78,56 @@
                 <div class="loading-text">
                     Scanning PowerShell<span class="loading-text-dots"></span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Popup -->
+    <div id="aboutPopup" class="popup-overlay tos-popup">
+        <div class="popup-content">
+            <div class="popup-title">ℹ️ About RBXScan</div>
+            <div class="tos-content">
+                <h3>🔍 What is RBXScan?</h3>
+                <p>RBXScan is an advanced PowerShell security scanner designed to detect stolen, compromised, or malicious scripts in real-time.</p>
+
+                <h3>🛡️ How It Works</h3>
+                <p>Our sophisticated analysis system performs multiple security checks:</p>
+                <ul>
+                    <li><strong>Signature Detection:</strong> Compares your script against a database of known stolen code</li>
+                    <li><strong>Pattern Analysis:</strong> Identifies suspicious patterns and malicious behaviors</li>
+                    <li><strong>Source Verification:</strong> Checks if the script matches legitimate PowerShell repositories</li>
+                    <li><strong>Threat Assessment:</strong> Analyzes potential security risks and vulnerabilities</li>
+                    <li><strong>Origin Tracking:</strong> Determines if the script was obtained from unauthorized sources</li>
+                </ul>
+
+                <h3>🎯 Why Use RBXScan?</h3>
+                <ul>
+                    <li><strong>Protect Your System:</strong> Avoid running stolen or compromised PowerShell scripts</li>
+                    <li><strong>Verify Authenticity:</strong> Ensure your scripts are from legitimate sources</li>
+                    <li><strong>Security Compliance:</strong> Meet enterprise security requirements</li>
+                    <li><strong>Real-time Analysis:</strong> Get instant results on script legitimacy</li>
+                    <li><strong>Prevent Data Theft:</strong> Stop malicious scripts before they can cause damage</li>
+                </ul>
+
+                <h3>⚡ Scanning Process</h3>
+                <p>When you submit a PowerShell script, RBXScan:</p>
+                <ul>
+                    <li>Analyzes the code structure and syntax</li>
+                    <li>Cross-references against known theft databases</li>
+                    <li>Checks for embedded malware or backdoors</li>
+                    <li>Verifies digital signatures and certificates</li>
+                    <li>Provides a comprehensive security report</li>
+                </ul>
+
+                <h3>🔒 Security & Privacy</h3>
+                <p>Your submitted scripts are processed securely using enterprise-grade encryption. We maintain strict confidentiality and do not store scripts longer than necessary for analysis.</p>
+
+                <h3>🏢 Trusted by Professionals</h3>
+                <p>RBXScan is trusted by cybersecurity professionals, system administrators, and enterprises worldwide to maintain PowerShell script integrity and security.</p>
+            </div>
+            
+            <div class="popup-buttons">
+                <button type="button" class="submit-btn" id="closeAbout">Got It</button>
             </div>
         </div>
     </div>

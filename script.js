@@ -15,6 +15,9 @@ const darkModeToggle = document.getElementById('darkModeToggle');
 const tosLink = document.getElementById('tosLink');
 const tosPopup = document.getElementById('tosPopup');
 const closeTos = document.getElementById('closeTos');
+const aboutLink = document.getElementById('aboutLink');
+const aboutPopup = document.getElementById('aboutPopup');
+const closeAbout = document.getElementById('closeAbout');
 
 // Configuration
 const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
@@ -360,6 +363,23 @@ function loadDarkModePreference() {
 
 // Dark mode toggle event
 darkModeToggle.addEventListener('click', toggleDarkMode);
+
+// About functionality
+aboutLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    aboutPopup.style.display = 'block';
+});
+
+closeAbout.addEventListener('click', () => {
+    aboutPopup.style.display = 'none';
+});
+
+// Close About when clicking outside
+aboutPopup.addEventListener('click', (e) => {
+    if (e.target === aboutPopup) {
+        closeAbout.click();
+    }
+});
 
 // ToS functionality
 tosLink.addEventListener('click', (e) => {
