@@ -434,9 +434,84 @@ body {
     font-size: 1.2rem;
     color: var(--text-secondary);
     margin-bottom: 3rem;
-    max-width: 600px;
+    max-width: 700px;
     margin-left: auto;
     margin-right: auto;
+}
+
+/* Trader Stats */
+.trader-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+    padding: 2rem;
+    background: var(--glass-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.trader-stat {
+    text-align: center;
+    padding: 1rem;
+}
+
+.trader-stat .stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary-blue);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.trader-stat .stat-label {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* Trust Categories */
+.trust-categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.trust-category {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.trust-category:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px var(--shadow-color);
+    border-color: var(--primary-blue);
+}
+
+.category-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.trust-category h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.trust-category p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.95rem;
 }
 
 .trust-badges {
