@@ -81,6 +81,15 @@ function isValidCode(code) {
         /^(.)\1{6,}$/,      // Same character repeated 7+ times (aaaaaaa)
         /^(..)\1{3,}$/,     // Same 2 characters repeated 4+ times (abababab)
         /^\s*$/,            // Only whitespace
+        
+        // Keyboard spam patterns
+        /^(qwerty|qwertyui|asdf|asdfgh|zxcv|zxcvbn|hjkl|hjklzx|uiop|yuiop|mnbv|vcxz|poiu|lkjh|gfds|fdsa|rewq|wert|erty|dfgh|fghj|ghjk|vbnm|bnm|nm|qaz|wsx|edc|rfv|tgb|yhn|ujm|ik|ol|pl|ok|ijn|uhb|ygv|tfc|rdx|esz|waq|qwe|asd|zxc|poi|lkj|mnb|vcx|dfg|fgh|ghj|hjk|jkl|vbn|bnm|nm)+$/i,
+        
+        // Common keyboard sequences
+        /^(123|1234|12345|123456|1234567|12345678|123456789|qwe|asd|zxc|wer|sdf|xcv|ert|dfg|cvb|rty|fgh|vbn|tyu|ghj|bnm|yui|hjk|iop|jkl|opq|klm|pqr|lmn|qrs|mno|rst|nop|stu|oqp|tuv|pqr|uvw|qrs|vwx|rst|wxy|stu|xyz|tuv)+$/i,
+        
+        // Random letter combinations (common spam)
+        /^(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)+$/i,
     ];
 
     for (const pattern of spamPatterns) {
