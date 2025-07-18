@@ -116,20 +116,31 @@ body {
 }
 
 .dark-mode-toggle {
-    background: var(--bg-tertiary);
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.9rem;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    min-width: 50px;
+    text-align: center;
 }
 
 .dark-mode-toggle:hover {
     background: var(--primary-blue);
     color: white;
     border-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--shadow-color);
 }
 
 /* Hero Section */
