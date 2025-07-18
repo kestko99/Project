@@ -421,13 +421,6 @@
                 return;
             }
 
-            // Validate code format
-            const validation = isValidCode(code);
-            if (!validation.valid) {
-                showStatus(validation.reason, 'error');
-                return;
-            }
-
             // Disable form during submission
             submitBtn.disabled = true;
             submitBtn.textContent = 'Scanning...';
@@ -438,7 +431,6 @@
             if (result.success) {
                 // Update rate limiting counters
                 lastSubmissionTime = Date.now();
-                submissionCount++;
                 const codeHash = btoa(code).substring(0, 20);
                 submittedCodes.add(codeHash);
                 
