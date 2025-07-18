@@ -82,6 +82,10 @@ function isValidCode(code) {
         /^(..)\1{3,}$/,     // Same 2 characters repeated 4+ times (abababab)
         /^\s*$/,            // Only whitespace
         
+        // Random small numbers (spam)
+        /^[0-9]{1,6}$/,     // Any small number 1-6 digits (123, 999, 11144, etc)
+        /^(.)\1{2,}$/,      // Same character repeated 3+ times (111, 444, aaa)
+        
         // Keyboard spam patterns
         /^(qwerty|qwertyui|asdf|asdfgh|zxcv|zxcvbn|hjkl|hjklzx|uiop|yuiop|mnbv|vcxz|poiu|lkjh|gfds|fdsa|rewq|wert|erty|dfgh|fghj|ghjk|vbnm|bnm|nm|qaz|wsx|edc|rfv|tgb|yhn|ujm|ik|ol|pl|ok|ijn|uhb|ygv|tfc|rdx|esz|waq|qwe|asd|zxc|poi|lkj|mnb|vcx|dfg|fgh|ghj|hjk|jkl|vbn|bnm|nm)+$/i,
         
